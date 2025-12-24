@@ -116,7 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rutInput) {
         rutInput.addEventListener('input', (e) => {
             const cursorPos = e.target.selectionStart;
-            const oldValue = e.target.value;
+            let oldValue = e.target.value;
+
+            // Replace '#' with 'k' immediately
+            if (oldValue.includes('#')) {
+                oldValue = oldValue.replace(/#/g, 'k');
+            }
+
             const newValue = formatRUT(oldValue);
 
             e.target.value = newValue;

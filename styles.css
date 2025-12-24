@@ -848,3 +848,140 @@ body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
         border-radius: 0;
     }
 }
+/* === Dashboard Enhancements === */
+
+/* Sidebar Toggle */
+.header-logo-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+    overflow: hidden; /* Hide text when collapsed if needed */
+}
+
+.sidebar-toggle {
+    background: transparent;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Collapsed Sidebar State */
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.sidebar.collapsed .header-logo-group h3,
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .sidebar-footer button span, 
+.sidebar.collapsed .branding-footer {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+    padding: var(--spacing-sm);
+    justify-content: center;
+}
+
+.sidebar.collapsed .header-logo-group {
+    display: none; /* Hide logo group, show only toggle or icon? */
+}
+
+/* Refined Collapsed - Show Icon Only */
+.sidebar.collapsed .header-logo-group {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    margin: 0 auto;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: var(--spacing-md);
+}
+
+.sidebar.collapsed .nav-item i {
+    margin-right: 0;
+    font-size: 1.5rem;
+}
+
+.sidebar.collapsed .sidebar-footer {
+    justify-content: center;
+}
+
+.sidebar.collapsed .btn-logout {
+    padding: var(--spacing-sm);
+    justify-content: center;
+}
+
+.sidebar.collapsed .btn-logout i {
+    margin-right: 0;
+}
+
+
+/* Reportes View Styles */
+.report-tabs {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.tab-btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: none;
+    border: none;
+    font-weight: 600;
+    color: var(--gray-500);
+    cursor: pointer;
+    position: relative;
+    top: 2px;
+}
+
+.tab-btn.active {
+    color: var(--primary-blue);
+    border-bottom: 2px solid var(--primary-blue);
+}
+
+.reporte-individual-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    margin-top: var(--spacing-md);
+}
+
+.report-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.summary-item {
+    background: var(--gray-50);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    display: block;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: var(--gray-500);
+}
+

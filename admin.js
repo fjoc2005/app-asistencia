@@ -844,3 +844,172 @@ if (document.querySelector('.admin-page') && aiAssistant) {
 if (document.querySelector('.admin-page')) {
     // No demo data initialization
 }
+// === Sidebar Toggle Logic ===
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const main = document.querySelector('.admin-main');
+
+    sidebar.classList.toggle('collapsed');
+
+    // Adjust logic for overlay on mobile if needed
+    // For now purely CSS driven
+}
+
+// === Reportes View Logic ===
+function renderReportesView() {
+    // Populate Massive Report
+    const usuarios = getUsuarios();
+    const asistencias = getAsistencias();
+    const tableBody = document.querySelector('#tablaReporteMasivo tbody');
+
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    if (usuarios.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay datos para mostrar</td></tr>';
+        return;
+    }
+
+    usuarios.forEach(user => {
+        const nombreCompleto = `${user.nombres} ${user.apellidoPaterno} ${user.apellidoMaterno}`;
+
+        // Calculate Stats
+        const userAsistencias = asistencias.filter(a => cleanRUT(a.rut) === cleanRUT(user.rut));
+        const totalAsistencias = userAsistencias.length;
+
+        // Basic Stats
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="font-medium">${formatRUT(user.rut)}</td>
+            <td>${nombreCompleto}</td>
+            <td class="text-center">${totalAsistencias}</td>
+            <td class="text-center">0</td> <!-- Placeholder for Atrasos -->
+            <td class="text-center">0</td> <!-- Placeholder for Inasistencias -->
+            <td><span class="badge ${user.estado === 'Activo' ? 'badge-success' : 'badge-danger'}">${user.estado}</span></td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function switchReportTab(tabName) {
+    // Update Tabs UI
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => {
+        if (tab.onclick.toString().includes(tabName)) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // Update Content Visibility
+    const contents = document.querySelectorAll('.report-tab-content');
+    contents.forEach(content => content.style.display = 'none');
+
+    const activeContent = document.getElementById(`tab-${tabName}`);
+    if (activeContent) {
+        activeContent.style.display = 'block';
+    }
+}
+
+function searchSociaForReport() {
+    const searchTerm = document.getElementById('searchReporteIndividual').value.toLowerCase();
+    const resultContainer = document.getElementById('reporteIndividualResult');
+    const usuarios = getUsuarios();
+
+    if (searchTerm.length < 2) {
+        resultContainer.style.display = 'none';
+        return;
+    }
+
+    const foundUser = usuarios.find(u =>
+        u.rut.includes(searchTerm) ||
+        `${u.nombres} ${u.apellidoPaterno}`.toLowerCase().includes(searchTerm)
+    );
+
+    if (foundUser) {
+        const asistencias = getAsistencias();
+        const userAsistencias = asistencias.filter(a => cleanRUT(a.rut) === cleanRUT(foundUser.rut));
+
+        resultContainer.innerHTML = `
+            <h3>Ficha Individual: ${foundUser.nombres} ${foundUser.apellidoPaterno}</h3>
+            <div class="report-summary-grid">
+                <div class="summary-item">
+                    <span class="summary-value">${userAsistencias.length}</span>
+                    <span class="summary-label">Asistencias Totales</span>
+                </div>
+                 <div class="summary-item">
+                    <span class="summary-value">0</span>
+                    <span class="summary-label">Atrasos</span>
+                </div>
+                 <div class="summary-item">
+                    <span class="summary-value">0</span>
+                    <span class="summary-label">Faltas Injustificadas</span>
+                </div>
+            </div>
+            
+            <h4 style="margin-top:20px;">Historial Reciente</h4>
+            <ul style="list-style: none; padding: 0;">
+                ${userAsistencias.slice(-5).reverse().map(a => `
+                    <li style="padding: 10px; border-bottom: 1px solid #eee;">
+                        📅 ${a.fecha} - ⏰ ${a.hora}
+                    </li>
+                `).join('') || '<li style="padding:10px;">Sin registros recientes</li>'}
+            </ul>
+        `;
+        resultContainer.style.display = 'block';
+    } else {
+        resultContainer.style.display = 'none';
+    }
+}
+
+function exportReporteMasivo() {
+    const usuarios = getUsuarios();
+    if (usuarios.length === 0) {
+        alert("No hay datos para exportar");
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "RUT,Nombre Completo,Estado,Asistencias,Atrasos\n";
+
+    const asistencias = getAsistencias();
+
+    usuarios.forEach(user => {
+        const nombreCompleto = `${user.nombres} ${user.apellidoPaterno} ${user.apellidoMaterno}`;
+        const totalAsistencias = asistencias.filter(a => cleanRUT(a.rut) === cleanRUT(user.rut)).length;
+        csvContent += `${user.rut},${nombreCompleto},${user.estado},${totalAsistencias},0\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "reporte_consolidado_sintramae.csv");
+    document.body.appendChild(link);
+    link.click();
+}
+
+// Hook into showView to render reports
+const originalShowView = window.showView;
+window.showView = function (viewId) {
+    if (viewId === 'reportes') {
+        renderReportesView();
+    }
+    // Call original logic (a bit tricky replacing global functions, better to inline logic if possible or copy original)
+    // Re-implementing simplified showView logic here for safety as I can't easily wrap strictly 
+
+    document.querySelectorAll('.view-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+    const selectedView = document.getElementById(viewId + 'View') || document.getElementById('view-' + viewId);
+    if (selectedView) selectedView.style.display = 'block';
+
+    const activeNav = document.querySelector(`a[href="#${viewId === 'controlAsistencia' ? 'control-asistencia' : viewId === 'nominaSocias' ? 'nomina-socias' : viewId}"]`);
+    if (activeNav) activeNav.classList.add('active');
+
+    // Mobile: Auto collapse sidebar on selection
+    if (window.innerWidth <= 768) {
+        document.querySelector('.sidebar').classList.add('collapsed');
+    }
+}

@@ -24,32 +24,41 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo-icon-small">
-                    <i data-lucide="clipboard-check"></i>
+                <div class="header-logo-group">
+                    <div class="logo-icon-small">
+                        <i data-lucide="clipboard-check"></i>
+                    </div>
+                    <h3>SINTRAMAE</h3>
                 </div>
-                <h3>APP Asistencia</h3>
+                <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">
+                    <i data-lucide="menu"></i>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
                 <a href="#dashboard" class="nav-item active" onclick="showView('dashboard')">
                     <i data-lucide="layout-dashboard"></i>
-                    Dashboard
+                    <span class="nav-text">Dashboard</span>
                 </a>
                 <a href="#control-asistencia" class="nav-item" onclick="showView('controlAsistencia')">
                     <i data-lucide="clipboard-check"></i>
-                    Control de Asistencia
+                    <span class="nav-text">Control de Asistencia</span>
                 </a>
                 <a href="#nomina-socias" class="nav-item" onclick="showView('nominaSocias')">
                     <i data-lucide="users"></i>
-                    Nómina de Socias
+                    <span class="nav-text">Nómina de Socias</span>
                 </a>
                 <a href="#descuentos" class="nav-item" onclick="showView('descuentos')">
                     <i data-lucide="percent"></i>
-                    Descuentos
+                    <span class="nav-text">Descuentos</span>
+                </a>
+                <a href="#reportes" class="nav-item" onclick="showView('reportes')">
+                    <i data-lucide="file-text"></i>
+                    <span class="nav-text">Reportes</span>
                 </a>
                 <a href="#vinculacion" class="nav-item" onclick="showView('vinculacion')">
                     <i data-lucide="cloud"></i>
-                    Vinculación de Cuentas
+                    <span class="nav-text">Vinculación de Cuentas</span>
                 </a>
             </nav>
 
@@ -322,6 +331,61 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Reportes View -->
+            <div id="reportesView" class="view-content">
+                <div class="view-header">
+                    <h2>Reportes y Estadísticas</h2>
+                    <p class="subtitle">Generación de reportes masivos e individuales</p>
+                </div>
+
+                <div class="report-tabs">
+                    <button class="tab-btn active" onclick="switchReportTab('masivo')">Reporte Masivo</button>
+                    <button class="tab-btn" onclick="switchReportTab('individual')">Reporte Individual</button>
+                </div>
+
+                <!-- Masivo Tab -->
+                <div id="tab-masivo" class="report-tab-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Nómina Completa Consolidada</h3>
+                            <button class="btn-primary" onclick="exportReporteMasivo()">
+                                <i data-lucide="download"></i> Exportar CSV
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="tablaReporteMasivo">
+                                <thead>
+                                    <tr>
+                                        <th>RUT</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Asistencias</th>
+                                        <th>Atrasos</th>
+                                        <th>Inasistencias</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Individual Tab -->
+                <div id="tab-individual" class="report-tab-content" style="display: none;">
+                    <div class="search-bar">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchReporteIndividual" placeholder="Buscar socia por RUT o nombre..."
+                            onkeyup="searchSociaForReport()">
+                    </div>
+
+                    <div id="reporteIndividualResult" class="reporte-individual-card" style="display: none;">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
             </div>
         </main>
