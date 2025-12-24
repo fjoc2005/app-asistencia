@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador - APP Asistencia</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Manifest for PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="admin-page">
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon-small">
+                    <i data-lucide="clipboard-check"></i>
+                </div>
+                <h3>APP Asistencia</h3>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" onclick="showView('dashboard')">
+                    <i data-lucide="layout-dashboard"></i>
+                    Dashboard
+                </a>
+                <a href="#control-asistencia" class="nav-item" onclick="showView('controlAsistencia')">
+                    <i data-lucide="clipboard-check"></i>
+                    Control de Asistencia
+                </a>
+                <a href="#nomina-socias" class="nav-item" onclick="showView('nominaSocias')">
+                    <i data-lucide="users"></i>
+                    Nómina de Socias
+                </a>
+                <a href="#descuentos" class="nav-item" onclick="showView('descuentos')">
+                    <i data-lucide="percent"></i>
+                    Descuentos
+                </a>
+                <a href="#vinculacion" class="nav-item" onclick="showView('vinculacion')">
+                    <i data-lucide="cloud"></i>
+                    Vinculación de Cuentas
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout" onclick="logout()">
+                    <i data-lucide="log-out"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1 id="viewTitle">Dashboard</h1>
+                <div class="admin-user">
+                    <i data-lucide="user-circle"></i>
+                    <span id="adminEmail">administracion@gmail.com</span>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view-content active">
+                <div class="stats-grid">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.1s">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalSocias">0</h3>
+                            <p>Total Socias</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.2s">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i data-lucide="calendar-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="asistenciasHoy">0</h3>
+                            <p>Asistencias Hoy</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.3s">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i data-lucide="calendar"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalReuniones">0</h3>
+                            <p>Reuniones Activas</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.4s">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <i data-lucide="image"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="fotosRegistradas">0</h3>
+                            <p>Fotos Registradas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h2>Actividad Reciente</h2>
+                    <div id="recentActivityList" class="activity-list">
+                        <p class="empty-state">No hay actividad reciente</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control de Asistencia View -->
+            <div id="controlAsistenciaView" class="view-content">
+                <div class="control-tabs">
+                    <button class="tab-btn active" onclick="showControlTab('matriz')">Matriz de Asistencia</button>
+                    <button class="tab-btn" onclick="showControlTab('reuniones')">Gestión de Reuniones</button>
+                </div>
+
+                <!-- Matriz de Asistencia Tab -->
+                <div id="matrizTab" class="control-tab-content active">
+                    <div class="view-header">
+                        <h2>Matriz de Asistencia</h2>
+                        <div class="legend">
+                            <span class="legend-item"><span class="badge-asistio">✓</span> Asistió</span>
+                            <span class="legend-item"><span class="badge-no-asistio">✗</span> No asistió</span>
+                            <span class="legend-item"><span class="badge-justifico">J</span> Justificó</span>
+                        </div>
+                    </div>
+
+                    <div class="attendance-matrix-container">
+                        <table class="attendance-matrix" id="attendanceMatrix">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-col">Socia</th>
+                                    <!-- Meeting columns will be added dynamically -->
+                                </tr>
+                            </thead>
+                            <tbody id="matrixBody">
+                                <tr>
+                                    <td colspan="100" class="empty-state">No hay datos para mostrar. Crea reuniones y
+                                        agrega socias.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reuniones Tab -->
+                <div id="reunionesTab" class="control-tab-content">
+                    <div class="view-header">
+                        <h2>Gestión de Reuniones</h2>
+                        <button class="btn-primary" onclick="showNuevaReunionModal()">
+                            <i data-lucide="plus"></i>
+                            Nueva Reunión
+                        </button>
+                    </div>
+
+                    <div class="meetings-grid" id="meetingsGrid">
+                        <p class="empty-state">No hay reuniones registradas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nómina de Socias View -->
+            <div id="nominaSociasView" class="view-content">
+                <div class="view-header">
+                    <div class="search-bar">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchSocias" placeholder="Buscar por RUT o nombre...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="showImportarModal()">
+                            <i data-lucide="upload"></i>
+                            Importar CSV
+                        </button>
+                        <button class="btn-primary" onclick="showNuevaSociaModal()">
+                            <i data-lucide="user-plus"></i>
+                            Nueva Socia
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>RUT</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Banco</th>
+                                <th>Cuenta</th>
+                                <th>Talla</th>
+                                <th>Zapatos</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sociasTableBody">
+                            <tr>
+                                <td colspan="9" class="empty-state">No hay socias registradas</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vinculación de Cuentas View -->
+            <div id="vinculacionView" class="view-content">
+                <div class="view-header">
+                    <h2>Vinculación de Cuentas</h2>
+                    <p class="subtitle">Conecta tu cuenta de Google Drive para sincronizar y respaldar datos</p>
+                </div>
+
+                <!-- Connection Status Card -->
+                <div class="drive-card" id="driveStatusCard">
+                    <div class="drive-card-header">
+                        <h3><i data-lucide="link"></i> Estado de Conexión</h3>
+                    </div>
+                    <div class="drive-card-body">
+                        <div class="drive-status">
+                            <span class="status-indicator" id="driveStatusIndicator">❌</span>
+                            <div class="status-info">
+                                <span class="status-text disconnected" id="driveStatusText">Desconectado</span>
+                                <span class="status-email" id="driveUserEmail" style="display: none;"></span>
+                                <span class="status-folder" id="driveFolderStatus" style="display: none;"></span>
+                            </div>
+                        </div>
+                        <div class="drive-actions">
+                            <button class="btn-primary" id="driveConnectBtn" onclick="driveIntegration?.signIn()">
+                                <i data-lucide="log-in"></i>
+                                Conectar con Google Drive
+                            </button>
+                            <button class="btn-secondary" id="driveDisconnectBtn" onclick="driveIntegration?.signOut()"
+                                style="display: none;">
+                                <i data-lucide="log-out"></i>
+                                Desconectar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sync Settings Card -->
+                <div class="drive-card">
+                    <div class="drive-card-header">
+                        <h3><i data-lucide="settings"></i> Configuración de Sincronización</h3>
+                    </div>
+                    <div class="drive-card-body">
+                        <div class="setting-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoSyncToggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div class="setting-info">
+                                <span class="setting-label">Sincronización automática</span>
+                                <span class="setting-description">Sincroniza automáticamente al modificar datos</span>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="dailyBackupToggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div class="setting-info">
+                                <span class="setting-label">Backup diario</span>
+                                <span class="setting-description">Crea un respaldo automático cada día</span>
+                            </div>
+                        </div>
+                        <div class="drive-manual-actions">
+                            <button class="btn-primary" id="driveSyncBtn"
+                                onclick="driveIntegration?.exportSociasToSheets()" disabled>
+                                <i data-lucide="refresh-cw"></i>
+                                Sincronizar ahora
+                            </button>
+                            <button class="btn-secondary" id="driveExportBtn"
+                                onclick="driveIntegration?.exportSociasToSheets()" disabled>
+                                <i data-lucide="upload"></i>
+                                Exportar a Sheets
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Descuentos View -->
+            <div id="descuentosView" class="view-content">
+                <div class="view-header">
+                    <h2>Gestión de Descuentos</h2>
+                    <p class="subtitle">Administra los convenios y observaciones de cada socia</p>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>RUT</th>
+                                <th>Nombre</th>
+                                <th>Convenio Activo</th>
+                                <th>Observación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="descuentosTableBody">
+                            <tr>
+                                <td colspan="5" class="empty-state">No hay socias registradas</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Nueva Reunión -->
+    <div id="nuevaReunionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Reunión</h3>
+                <button class="btn-close" onclick="closeModal('nuevaReunionModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="nuevaReunionForm">
+                <div class="form-group">
+                    <label for="reunionNombre">Nombre de la Reunión</label>
+                    <input type="text" id="reunionNombre" placeholder="Reunión Mensual Enero" required>
+                </div>
+                <div class="form-group">
+                    <label for="reunionFecha">Fecha</label>
+                    <input type="date" id="reunionFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="reunionHora">Hora</label>
+                    <input type="time" id="reunionHora" required>
+                </div>
+                <div class="form-group">
+                    <label for="reunionDescripcion">Descripción</label>
+                    <textarea id="reunionDescripcion" rows="3" placeholder="Descripción de la reunión"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary"
+                        onclick="closeModal('nuevaReunionModal')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Crear Reunión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Socia -->
+    <div id="nuevaSociaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Socia</h3>
+                <button class="btn-close" onclick="closeModal('nuevaSociaModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="nuevaSociaForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaRut">RUT *</label>
+                        <input type="text" id="sociaRut" placeholder="12.345.678-9" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaNombres">Nombres *</label>
+                        <input type="text" id="sociaNombres" placeholder="María José" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaApellidoPaterno">Apellido Paterno *</label>
+                        <input type="text" id="sociaApellidoPaterno" placeholder="González" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaApellidoMaterno">Apellido Materno *</label>
+                        <input type="text" id="sociaApellidoMaterno" placeholder="Silva" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaEmail">Email *</label>
+                        <input type="email" id="sociaEmail" placeholder="maria@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaEstado">Estado</label>
+                        <select id="sociaEstado">
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaBanco">Banco</label>
+                        <input type="text" id="sociaBanco" placeholder="Banco de Chile">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaCuenta">Número de Cuenta</label>
+                        <input type="text" id="sociaCuenta" placeholder="123456789">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaTalla">Talla</label>
+                        <select id="sociaTalla">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaZapatos">Talla Zapatos</label>
+                        <input type="number" id="sociaZapatos" placeholder="37" min="30" max="50">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary"
+                        onclick="closeModal('nuevaSociaModal')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Socia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Importar CSV -->
+    <div id="importarModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Importar Socias desde CSV</h3>
+                <button class="btn-close" onclick="closeModal('importarModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="import-section">
+                <div class="upload-area" id="uploadArea">
+                    <i data-lucide="upload-cloud"></i>
+                    <h3>Arrastra tu archivo CSV aquí</h3>
+                    <p>o haz clic para seleccionar</p>
+                    <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                    <button class="btn-secondary" onclick="document.getElementById('csvFile').click()">
+                        Seleccionar Archivo
+                    </button>
+                </div>
+
+                <div class="csv-format-info">
+                    <h3>Formato del CSV</h3>
+                    <p>El archivo debe contener las siguientes columnas:</p>
+                    <code>RUT,Nombre,Email,Estado</code>
+                    <p class="example">Ejemplo: 12345678-9,María González,maria@email.com,Activo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Asistencia -->
+    <div id="editarAsistenciaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Asistencia</h3>
+                <button class="btn-close" onclick="closeModal('editarAsistenciaModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="editarAsistenciaForm">
+                <input type="hidden" id="editSociaRut">
+                <input type="hidden" id="editReunionId">
+
+                <div class="form-group">
+                    <p><strong>Socia:</strong> <span id="editSociaNombre"></span></p>
+                    <p><strong>Reunión:</strong> <span id="editReunionNombre"></span></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="editEstadoAsistencia">Estado de Asistencia</label>
+                    <select id="editEstadoAsistencia" required>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="asistio">✓ Asistió</option>
+                        <option value="no-asistio">✗ No asistió</option>
+                        <option value="justifico">J Justificó</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="justificacionGroup" style="display: none;">
+                    <label for="editJustificacion">Justificación</label>
+                    <textarea id="editJustificacion" rows="3" placeholder="Ingresa la justificación..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary"
+                        onclick="closeModal('editarAsistenciaModal')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Assistant Chat -->
+    <button class="ai-chat-button" id="aiChatButton" onclick="toggleAIChat()">
+        <i data-lucide="bot"></i>
+        <span class="ai-badge">IA</span>
+    </button>
+
+    <div class="ai-chat-panel" id="aiChatPanel">
+        <div class="ai-chat-header">
+            <h3><i data-lucide="bot"></i> Asistente IA</h3>
+            <button class="btn-close" onclick="toggleAIChat()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message assistant">
+                <div class="message-content">
+                    ¡Hola! 👋 Soy tu asistente de IA. Puedo ayudarte a gestionar socias, buscar información y exportar
+                    datos a Google Drive. ¿En qué puedo ayudarte?
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-quick-actions" id="aiQuickActions">
+            <button class="quick-action-chip" onclick="sendQuickAction('Busca una socia')">
+                <i data-lucide="search"></i> Buscar
+            </button>
+            <button class="quick-action-chip" onclick="sendQuickAction('Agrega una nueva socia')">
+                <i data-lucide="user-plus"></i> Agregar
+            </button>
+            <button class="quick-action-chip" onclick="sendQuickAction('Actualizar datos')">
+                <i data-lucide="edit"></i> Actualizar Datos
+            </button>
+            <button class="quick-action-chip" onclick="sendQuickAction('¿Cuántas socias tenemos?')">
+                <i data-lucide="bar-chart"></i> Estadísticas
+            </button>
+            <button class="quick-action-chip" onclick="sendQuickAction('Exporta a Google Sheets')">
+                <i data-lucide="cloud"></i> Exportar
+            </button>
+        </div>
+
+        <div class="ai-typing-indicator" id="aiTypingIndicator" style="display: none;">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="ai-chat-input">
+            <input type="text" id="aiChatInput" placeholder="Escribe un mensaje..."
+                onkeypress="handleAIChatKeyPress(event)">
+            <button class="btn-send" onclick="sendAIMessage()">
+                <i data-lucide="send"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="google-drive-integration.js"></script>
+    <script src="ai-assistant.js"></script>
+    <script src="admin.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
