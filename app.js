@@ -165,6 +165,28 @@ document.addEventListener('DOMContentLoaded', () => {
             showUserInfo(nombreCompleto);
             btnConfirmar.disabled = false;
         });
+
+        // "K" Button Logic
+        const btnK = document.getElementById('btnK');
+        if (btnK) {
+            btnK.addEventListener('click', () => {
+                const startPos = rutInput.selectionStart;
+                const endPos = rutInput.selectionEnd;
+                const currentValue = rutInput.value;
+
+                // Insert 'k' at cursor position or append
+                const newValue = currentValue.substring(0, startPos) + 'k' + currentValue.substring(endPos);
+
+                // Update value and trigger input event for formatting
+                rutInput.value = newValue;
+
+                // Trigger input event manually to run formatting logic
+                const event = new Event('input', { bubbles: true });
+                rutInput.dispatchEvent(event);
+
+                rutInput.focus();
+            });
+        }
     }
 
     // Form submission - Start photo capture

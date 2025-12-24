@@ -672,3 +672,179 @@ body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
         bottom: 20px;
     }
 }
+/* === UI Enhancements === */
+
+/* Input Group for K Button */
+.input-group {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
+.input-group input {
+    flex: 1;
+}
+
+.btn-k {
+    background: var(--gray-200);
+    color: var(--gray-700);
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    padding: 0 var(--spacing-md);
+    font-weight: 700;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    height: 50px; /* Match input height roughly */
+    min-width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-k:active {
+    background: var(--primary-blue);
+    color: var(--white);
+    border-color: var(--primary-blue);
+    transform: scale(0.95);
+}
+
+/* Branding Footer */
+.branding-footer {
+    margin-top: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    text-align: center;
+    width: 100%;
+}
+
+.branding-footer.branding-light {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.branding-footer strong {
+    font-weight: 600;
+}
+
+/* Responsive Optimizations */
+@media (max-width: 768px) {
+    /* General */
+    html {
+        font-size: 14px; /* Scale down slightly */
+    }
+
+    /* Main Page */
+    .container-main {
+        width: 100%;
+        padding: 0 var(--spacing-md);
+    }
+    
+    .logo-icon {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .logo-icon i {
+        width: 50px;
+        height: 50px;
+    }
+
+    .logo-section h1 {
+        font-size: 2.2rem;
+    }
+
+    .btn-main {
+        width: 100%;
+        justify-content: center;
+        padding: var(--spacing-md);
+        font-size: 1.2rem;
+    }
+
+    /* Registro Page */
+    .registro-container {
+        padding: var(--spacing-sm);
+        height: 100vh; /* Full height on mobile */
+        display: flex;
+        align-items: center;
+    }
+
+    .registro-card {
+        padding: var(--spacing-lg) var(--spacing-md);
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .registro-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .btn-large {
+        padding: var(--spacing-md);
+    }
+
+    /* Admin Sidebar (Collapsed on Mobile) */
+    .sidebar {
+        display: none; /* Hide by default on really small screens, logic needed to toggle */
+        z-index: 2000;
+    }
+    
+    /* We need a mobile menu button/logic if we hide sidebar, 
+       but for now let's just make layout column-based */
+    .admin-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        display: flex;
+        position: relative;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .sidebar-header {
+        justify-content: center;
+    }
+    
+    .sidebar-nav {
+         display: flex;
+         overflow-x: auto;
+         padding: var(--spacing-xs);
+         gap: var(--spacing-xs);
+    }
+    
+    .nav-item {
+        flex-direction: column;
+        padding: var(--spacing-xs);
+        font-size: 0.7rem;
+        text-align: center;
+        min-width: 70px;
+        justify-content: center;
+    }
+    
+    .nav-item i {
+        margin-bottom: 4px;
+    }
+
+    .sidebar-footer {
+         display: none; /* Hide footer in horizontal view to save space */
+    }
+
+    .admin-main {
+        margin-left: initial;
+        padding: var(--spacing-md);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Tables */
+    .attendance-matrix-container {
+        margin: 0 -1rem; /* Full bleed tables on mobile */
+        border-radius: 0;
+    }
+}

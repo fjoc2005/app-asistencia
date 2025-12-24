@@ -32,8 +32,11 @@
                         <i data-lucide="id-card"></i>
                         RUT
                     </label>
-                    <input type="text" id="rut" name="rut" placeholder="12.345.678-9" required maxlength="12"
-                        autocomplete="off" autofocus>
+                    <div class="input-group">
+                        <input type="tel" id="rut" name="rut" placeholder="12345678-9" required maxlength="12"
+                            autocomplete="off" autofocus inputmode="numeric">
+                        <button type="button" class="btn-k" id="btnK">K</button>
+                    </div>
                     <small class="input-hint">Formato: 12.345.678-9</small>
                 </div>
 
@@ -88,6 +91,9 @@
                     <i data-lucide="arrow-left"></i>
                     Volver al inicio
                 </a>
+                <div class="branding-footer">
+                    Desarrollado por <strong>Sintramae</strong>
+                </div>
             </div>
         </div>
     </div>
