@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Asistencia - APP Asistencia</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="registro-page">
+    <div class="registro-container">
+        <div class="registro-card animate-scale-in">
+            <div class="registro-header">
+                <div class="logo-icon-small">
+                    <i data-lucide="user-check"></i>
+                </div>
+                <h2>Registro de Asistencia</h2>
+                <p id="headerText">Ingresa tu RUT para registrar tu asistencia</p>
+            </div>
+
+            <!-- RUT Input Section -->
+            <form id="registroForm" class="registro-form">
+                <div class="form-group">
+                    <label for="rut">
+                        <i data-lucide="id-card"></i>
+                        RUT
+                    </label>
+                    <input type="text" id="rut" name="rut" placeholder="12.345.678-9" required maxlength="12"
+                        autocomplete="off" autofocus>
+                    <small class="input-hint">Formato: 12.345.678-9</small>
+                </div>
+
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <div class="user-card">
+                        <i data-lucide="user" class="user-icon"></i>
+                        <div class="user-details">
+                            <span class="user-label">Nombre:</span>
+                            <span id="userName" class="user-name"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    <i data-lucide="alert-circle"></i>
+                    <span></span>
+                </div>
+
+                <button type="submit" class="btn-success btn-confirmar" id="btnConfirmar" disabled>
+                    <i data-lucide="camera"></i>
+                    TOMAR FOTOGRAFÍA
+                </button>
+            </form>
+
+            <!-- Photo Capture Section -->
+            <div id="photoCaptureSection" class="photo-capture-section" style="display: none;">
+                <h3>Toma tu fotografía</h3>
+                <p>Posiciónate frente a la cámara</p>
+
+                <div class="camera-container">
+                    <video id="videoElement" autoplay muted playsinline></video>
+                    <canvas id="photoCanvas" style="display: none;"></canvas>
+                </div>
+
+                <div class="photo-actions">
+                    <button type="button" class="btn-primary btn-large" id="btnCapturePhoto">
+                        <i data-lucide="camera"></i>
+                        Capturar Foto
+                    </button>
+                </div>
+
+                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="uploadStatus">Subiendo fotografía...</p>
+                </div>
+            </div>
+
+            <div class="registro-footer">
+                <a href="index.html" class="back-link">
+                    <i data-lucide="arrow-left"></i>
+                    Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content success-animation">
+            <div class="success-icon">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <h3>¡Asistencia Registrada!</h3>
+            <p id="successMessage"></p>
+            <p class="redirect-message">Redirigiendo al inicio...</p>
+        </div>
+    </div>
+
+    <div class="background-decoration">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+    </div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="google-drive.js"></script>
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
