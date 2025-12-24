@@ -18,18 +18,22 @@ class AIAssistant {
         search: /(busca|encuentra|muestra|dame|ver).*socia/i,
         add: /(agrega|añade|crea|nueva?).*socia/i,
         update: /(actualiza|modifica|cambia|edita)/i,
-        stats: /(estadísticas?|resumen|reporte|informe)/i,
+        stats: /(estadísticas?|resumen|informe)/i,
         export: /(exporta|guarda|sincroniza).*(?:drive|sheets|google)/i,
         help: /^(ayuda|help|\?|qué puedes hacer)/i,
-        meetings: /(reunión|reuniones|meeting)/i
+        meetings: /(reunión|reuniones|meeting)/i,
+        discount: /(descuento|rebaja|convenio)/i,
+        report_individual: /(reporte.*individual|ficha.*socia)/i,
+        report_group: /(reporte.*(grupal|masivo)|nomina|listado)/i
     };
 
     // Quick action suggestions
     quickActions = [
-        { label: '🔍 Buscar', command: 'Busca una socia' },
-        { label: '➕ Agregar', command: 'Agrega una nueva socia' },
-        { label: '📊 Estadísticas', command: '¿Cuántas socias tenemos?' },
-        { label: '☁️ Exportar', command: 'Exporta a Google Sheets' }
+        { label: '➕ Agregar socia', command: 'Agregar nueva socia' },
+        { label: '✏️ Modificar', command: 'Modificar datos' },
+        { label: '🏷️ Descuento', command: 'Ingresar descuento' },
+        { label: '📄 Rep. Individual', command: 'Reporte individual' },
+        { label: '📊 Rep. Grupal', command: 'Reporte grupal' }
     ];
 
     // Process user message
@@ -102,6 +106,21 @@ class AIAssistant {
         // Export to Google Drive
         if (this.patterns.export.test(msg)) {
             return await this.exportToGoogleDrive();
+        }
+
+        // Discount
+        if (this.patterns.discount.test(msg)) {
+            return this.handleDiscount();
+        }
+
+        // Report Individual
+        if (this.patterns.report_individual.test(msg)) {
+            return this.handleIndividualReport();
+        }
+
+        // Report Group
+        if (this.patterns.report_group.test(msg)) {
+            return this.handleGroupReport();
         }
 
         // Meetings
@@ -529,6 +548,34 @@ class AIAssistant {
     // Get quick actions
     getQuickActions() {
         return this.quickActions;
+    }
+
+    // === NEW HANDLERS ===
+
+    handleDiscount() {
+        if (typeof showView === 'function') {
+            showView('descuentos');
+            return 'Te he llevado a la sección de **Gestión de Descuentos**. Aquí puedes ver y agregar convenios para las socias.';
+        }
+        return 'No pude acceder a la sección de descuentos.';
+    }
+
+    handleIndividualReport() {
+        if (typeof showView === 'function') {
+            showView('reportes');
+            setTimeout(() => { if (typeof switchReportTab === 'function') switchReportTab('individual'); }, 100);
+            return 'Te he llevado a la sección de **Reportes Individuales**. Usa el buscador para encontrar la ficha de una socia específica.';
+        }
+        return 'No pude acceder a los reportes.';
+    }
+
+    handleGroupReport() {
+        if (typeof showView === 'function') {
+            showView('reportes');
+            setTimeout(() => { if (typeof switchReportTab === 'function') switchReportTab('masivo'); }, 100);
+            return 'Te he llevado al **Reporte Grupal (Masivo)**. Aquí puedes ver la nómina completa consolidada.';
+        }
+        return 'No pude acceder a los reportes.';
     }
 }
 

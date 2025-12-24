@@ -840,9 +840,40 @@ if (document.querySelector('.admin-page') && aiAssistant) {
     }
 }
 
-// Demo data removed - admins must add members manually
+// Demo data initialization
 if (document.querySelector('.admin-page')) {
-    // No demo data initialization
+    initializeDemoData();
+}
+
+function initializeDemoData() {
+    const usuarios = getUsuarios();
+    if (usuarios.length === 0) {
+        console.log("Initializing demo data...");
+        const demoUsers = [
+            { rut: "12.345.678-1", nombres: "María", apellidoPaterno: "González", apellidoMaterno: "Pérez", email: "maria.gonzalez@email.com", estado: "Activo", banco: "Banco Estado", cuenta: "123456", talla: "M", zapatos: "37" },
+            { rut: "13.456.789-2", nombres: "Ana", apellidoPaterno: "Silva", apellidoMaterno: "Rojas", email: "ana.silva@email.com", estado: "Activo", banco: "Banco de Chile", cuenta: "987654", talla: "S", zapatos: "36" },
+            { rut: "14.567.890-3", nombres: "Carmen", apellidoPaterno: "López", apellidoMaterno: "Díaz", email: "carmen.lopez@email.com", estado: "Inactivo", banco: "Santander", cuenta: "456123", talla: "L", zapatos: "38" },
+            { rut: "15.678.901-4", nombres: "Patricia", apellidoPaterno: "Muñoz", apellidoMaterno: "Soto", email: "patricia.munoz@email.com", estado: "Activo", banco: "Banco Estado", cuenta: "789456", talla: "XL", zapatos: "39" },
+            { rut: "16.789.012-5", nombres: "Carolina", apellidoPaterno: "Reyes", apellidoMaterno: "Morales", email: "carolina.reyes@email.com", estado: "Activo", banco: "Scotiabank", cuenta: "321654", talla: "M", zapatos: "37" },
+            { rut: "17.890.123-6", nombres: "Claudia", apellidoPaterno: "Herrera", apellidoMaterno: "Castro", email: "claudia.herrera@email.com", estado: "Activo", banco: "Banco Falabella", cuenta: "654987", talla: "S", zapatos: "36" },
+            { rut: "18.901.234-7", nombres: "Daniela", apellidoPaterno: "Vargas", apellidoMaterno: "Ortiz", email: "daniela.vargas@email.com", estado: "Activo", banco: "Bci", cuenta: "147258", talla: "L", zapatos: "38" },
+            { rut: "19.012.345-8", nombres: "Francisca", apellidoPaterno: "Jiménez", apellidoMaterno: "Lagos", email: "francisca.jimenez@email.com", estado: "Inactivo", banco: "Banco Estado", cuenta: "258369", talla: "M", zapatos: "37" },
+            { rut: "20.123.456-9", nombres: "Camila", apellidoPaterno: "Torres", apellidoMaterno: "Vega", email: "camila.torres@email.com", estado: "Activo", banco: "Santander", cuenta: "369147", talla: "XS", zapatos: "35" },
+            { rut: "21.234.567-0", nombres: "Valentina", apellidoPaterno: "Guzmán", apellidoMaterno: "Navarro", email: "valentina.guzman@email.com", estado: "Activo", banco: "Banco de Chile", cuenta: "741852", talla: "S", zapatos: "36" }
+        ];
+
+        saveUsuarios(demoUsers);
+
+        // Add some dummy attendance
+        const asistencias = [
+            { rut: "12345678-1", fecha: "2024-05-01", hora: "09:00", estado: "asistio" },
+            { rut: "13456789-2", fecha: "2024-05-01", hora: "09:15", estado: "asistio" },
+            { rut: "17890123-6", fecha: "2024-05-01", hora: "09:05", estado: "asistio" }
+        ];
+        saveAsistencias(asistencias);
+
+        loadSocias();
+    }
 }
 // === Sidebar Toggle Logic ===
 function toggleSidebar() {
@@ -971,23 +1002,26 @@ function exportReporteMasivo() {
         return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "RUT,Nombre Completo,Estado,Asistencias,Atrasos\n";
+    // Add BOM for Excel UTF-8 compatibility
+    let csvContent = "\uFEFF";
+    csvContent += "RUT;Nombre Completo;Estado;Asistencias;Atrasos\n"; // Using semicolon for Spanish Excel
 
     const asistencias = getAsistencias();
 
     usuarios.forEach(user => {
         const nombreCompleto = `${user.nombres} ${user.apellidoPaterno} ${user.apellidoMaterno}`;
         const totalAsistencias = asistencias.filter(a => cleanRUT(a.rut) === cleanRUT(user.rut)).length;
-        csvContent += `${user.rut},${nombreCompleto},${user.estado},${totalAsistencias},0\n`;
+        csvContent += `${user.rut};${nombreCompleto};${user.estado};${totalAsistencias};0\n`;
     });
 
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", "reporte_consolidado_sintramae.csv");
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
 }
 
 // Hook into showView to render reports

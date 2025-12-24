@@ -585,8 +585,8 @@
 
     <!-- AI Assistant Chat -->
     <button class="ai-chat-button" id="aiChatButton" onclick="toggleAIChat()">
-        <i data-lucide="bot"></i>
-        <span class="ai-badge">IA</span>
+        <img src="teresita.png" alt="Teresita" class="ai-avatar-img">
+        <span class="ai-notification-dot"></span>
     </button>
 
     <div class="ai-chat-panel" id="aiChatPanel">
@@ -600,27 +600,27 @@
         <div class="ai-chat-messages" id="aiChatMessages">
             <div class="ai-message assistant">
                 <div class="message-content">
-                    ¡Hola! 👋 Soy tu asistente de IA. Puedo ayudarte a gestionar socias, buscar información y exportar
-                    datos a Google Drive. ¿En qué puedo ayudarte?
+                    ¡Hola! Soy <strong>Teresita</strong>, tu asistente virtual. Estoy aquí para ayudarte con la gestión
+                    de SINTRAMAE. ¿Qué necesitas hacer hoy?
                 </div>
             </div>
         </div>
 
         <div class="ai-quick-actions" id="aiQuickActions">
-            <button class="quick-action-chip" onclick="sendQuickAction('Busca una socia')">
-                <i data-lucide="search"></i> Buscar
+            <button class="quick-action-chip" onclick="sendQuickAction('Agregar nueva socia')">
+                <i data-lucide="user-plus"></i> Agregar nueva socia
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Agrega una nueva socia')">
-                <i data-lucide="user-plus"></i> Agregar
+            <button class="quick-action-chip" onclick="sendQuickAction('Modificar datos')">
+                <i data-lucide="edit"></i> Modificar datos
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Actualizar datos')">
-                <i data-lucide="edit"></i> Actualizar Datos
+            <button class="quick-action-chip" onclick="sendQuickAction('Ingresar descuento')">
+                <i data-lucide="percent"></i> Ingresar descuento
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('¿Cuántas socias tenemos?')">
-                <i data-lucide="bar-chart"></i> Estadísticas
+            <button class="quick-action-chip" onclick="sendQuickAction('Reporte individual')">
+                <i data-lucide="file-text"></i> Reporte individual
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Exporta a Google Sheets')">
-                <i data-lucide="cloud"></i> Exportar
+            <button class="quick-action-chip" onclick="sendQuickAction('Reporte grupal')">
+                <i data-lucide="files"></i> Reporte grupal
             </button>
         </div>
 
