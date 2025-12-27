@@ -9,11 +9,15 @@ const GOOGLE_CONFIG = {
     apiKey: 'YOUR_API_KEY', // Replace with actual API key
     discoveryDocs: [
         'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
-        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+        'https://sheets.googleapis.com/$discovery/rest?version=v4',
+        'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+        'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
     ],
     scopes: [
         'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/spreadsheets'
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/calendar.events.readonly',
+        'https://www.googleapis.com/auth/gmail.send'
     ].join(' ')
 };
 
@@ -207,18 +211,32 @@ class GoogleDriveIntegration {
             const spreadsheet = await this.createSpreadsheet('Nómina de Socias', this.subfolders.socias);
 
             // Prepare data
-            const headers = ['RUT', 'Nombres', 'Apellido Paterno', 'Apellido Materno', 'Email', 'Estado', 'Banco', 'Cuenta', 'Talla', 'Zapatos'];
+            const headers = [
+                'N° de REG', 'RUT', 'Nombres', 'Apellido Paterno', 'Apellido Materno',
+                'Comuna', 'N° REG ANT', 'Fecha de Nacimiento', 'Edad', 'Estado Civil',
+                'Número de Celular', 'Dirección', 'Correo Electrónico', 'RBD',
+                'Año de Ingreso al PAE', 'Hijos Menores', 'Hijos Mayores', 'Empresa', 'Estado'
+            ];
             const rows = socias.map(s => [
+                s.numReg || '',
                 s.rut,
                 s.nombres || '',
                 s.apellidoPaterno || '',
                 s.apellidoMaterno || '',
-                s.email,
-                s.estado,
-                s.banco || '',
-                s.cuenta || '',
-                s.talla || '',
-                s.zapatos || ''
+                s.comuna || '',
+                s.numRegAnt || '',
+                s.fechaNacimiento || '',
+                s.edad || '',
+                s.estadoCivil || '',
+                s.celular || '',
+                s.direccion || '',
+                s.email || '',
+                s.rbd || '',
+                s.anoIngresoPae || '',
+                s.hijosMenores || '0',
+                s.hijosMayores || '0',
+                s.empresa || '',
+                s.estado || 'Activo'
             ]);
 
             // Write data to sheet
@@ -399,6 +417,151 @@ class GoogleDriveIntegration {
             email: this.isSignedIn ? gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile().getEmail() : null,
             folderCreated: !!this.mainFolderId
         };
+    }
+
+    // Send email using Gmail API
+    async sendEmail(to, subject, body) {
+        if (!this.isSignedIn) {
+            throw new Error('Not signed in to Google');
+        }
+
+        const email = [
+            `To: ${to}`,
+            'Content-Type: text/plain; charset=utf-8',
+            'MIME-Version: 1.0',
+            `Subject: ${subject}`,
+            '',
+            body
+        ].join('\n');
+
+        const base64EncodedEmail = btoa(unescape(encodeURIComponent(email)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+
+        try {
+            await gapi.client.gmail.users.messages.send({
+                'userId': 'me',
+                'resource': {
+                    'raw': base64EncodedEmail
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error('Error sending email:', error);
+            throw error;
+        }
+    }
+
+    // Data Persistence Methods
+    async saveDataFile(filename, data) {
+        if (!this.isSignedIn || !this.mainFolderId) return;
+
+        try {
+            // Find existing file in main folder
+            const response = await gapi.client.drive.files.list({
+                q: `name='${filename}' and '${this.mainFolderId}' in parents and trashed=false`,
+                fields: 'files(id, name)'
+            });
+
+            const fileId = response.result.files.length > 0 ? response.result.files[0].id : null;
+            const content = JSON.stringify(data);
+            const boundary = '-------314159265358979323846';
+            const delimiter = "\r\n--" + boundary + "\r\n";
+            const close_delim = "\r\n--" + boundary + "--";
+
+            const contentType = 'application/json';
+            const metadata = {
+                'name': filename,
+                'mimeType': contentType,
+                'parents': [this.mainFolderId]
+            };
+
+            const multipartRequestBody =
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                JSON.stringify(metadata) +
+                delimiter +
+                'Content-Type: ' + contentType + '\r\n\r\n' +
+                content +
+                close_delim;
+
+            if (fileId) {
+                // Update existing file
+                await gapi.client.request({
+                    'path': `/upload/drive/v3/files/${fileId}`,
+                    'method': 'PATCH',
+                    'params': { 'uploadType': 'multipart' },
+                    'headers': {
+                        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                    },
+                    'body': multipartRequestBody
+                });
+            } else {
+                // Create new file
+                await gapi.client.request({
+                    'path': '/upload/drive/v3/files',
+                    'method': 'POST',
+                    'params': { 'uploadType': 'multipart' },
+                    'headers': {
+                        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                    },
+                    'body': multipartRequestBody
+                });
+            }
+        } catch (error) {
+            console.error(`Error saving ${filename}:`, error);
+        }
+    }
+
+    async loadDataFile(filename) {
+        if (!this.isSignedIn || !this.mainFolderId) return null;
+
+        try {
+            const response = await gapi.client.drive.files.list({
+                q: `name='${filename}' and '${this.mainFolderId}' in parents and trashed=false`,
+                fields: 'files(id, name)'
+            });
+
+            if (response.result.files.length === 0) return null;
+
+            const fileId = response.result.files[0].id;
+            const fileResponse = await gapi.client.drive.files.get({
+                fileId: fileId,
+                alt: 'media'
+            });
+
+            return fileResponse.result;
+        } catch (error) {
+            console.error(`Error loading ${filename}:`, error);
+            return null;
+        }
+    }
+
+    async syncData() {
+        if (!this.isSignedIn) return;
+
+        const data = {
+            usuarios: getSocias(),
+            meetings: getMeetings(),
+            attendanceRecords: getAttendanceRecords(),
+            discounts: getDiscounts()
+        };
+
+        await this.saveDataFile('app_data.json', data);
+        console.log('Data synced to Drive');
+    }
+
+    async loadAllFromDrive() {
+        const data = await this.loadDataFile('app_data.json');
+        if (data) {
+            if (data.usuarios) localStorage.setItem('usuarios', JSON.stringify(data.usuarios));
+            if (data.meetings) localStorage.setItem('meetings', JSON.stringify(data.meetings));
+            if (data.attendanceRecords) localStorage.setItem('attendanceRecords', JSON.stringify(data.attendanceRecords));
+            if (data.discounts) localStorage.setItem('discounts', JSON.stringify(data.discounts));
+            return true;
+        }
+        return false;
     }
 }
 

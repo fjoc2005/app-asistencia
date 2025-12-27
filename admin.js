@@ -3,6 +3,11 @@
 // Consolidated attendance control and member roster
 // ===================================
 
+// Global State for Member Table
+let currentSociasSort = { criteria: 'numReg', direction: 'asc' };
+let currentSociasCategory = 'all';
+let currentSociasQuery = '';
+
 // Admin credentials
 const ADMIN_CREDENTIALS = {
     email: 'administracion@gmail.com',
@@ -53,6 +58,21 @@ if (document.querySelector('.admin-page')) {
     loadAttendanceMatrix();
     loadDescuentos();
     setupEventListeners();
+
+    // Load data from Drive if signed in
+    setTimeout(async () => {
+        if (driveIntegration && driveIntegration.isSignedIn) {
+            const loaded = await driveIntegration.loadAllFromDrive();
+            if (loaded) {
+                // Refresh views with newly loaded data
+                initializeDashboard();
+                loadSocias();
+                loadMeetings();
+                loadAttendanceMatrix();
+                loadDescuentos();
+            }
+        }
+    }, 2000);
 }
 
 // Local Storage Functions
@@ -80,8 +100,103 @@ function getMeetings() {
 
 function saveMeeting(meeting) {
     const meetings = getMeetings();
-    meetings.push(meeting);
+    meetings.push({
+        ...meeting,
+        habilitada: true
+    });
     localStorage.setItem('meetings', JSON.stringify(meetings));
+}
+
+function toggleMeetingStatus(id, isEnabled) {
+    let meetings = getMeetings();
+    const index = meetings.findIndex(m => m.id === id);
+    if (index !== -1) {
+        meetings[index].habilitada = isEnabled;
+        meetings[index].estado = isEnabled ? 'Activa' : 'Inactiva';
+        localStorage.setItem('meetings', JSON.stringify(meetings));
+        loadMeetings();
+        loadAttendanceMatrix();
+        initializeDashboard();
+    }
+}
+
+function exportMeetingReport(meetingId) {
+    const meetings = getMeetings();
+    const meeting = meetings.find(m => m.id === meetingId);
+    if (!meeting) return;
+
+    const socias = getSocias();
+    const records = getAttendanceRecords();
+
+    const headers = ['RUT', 'Nombre', 'Estado de Asistencia', 'Justificacion'];
+    const rows = socias.map(s => {
+        const record = records[`${s.rut}_${meetingId}`] || { status: 'Sin registro', justification: '' };
+        const nombreCompleto = `${s.nombres || s.nombre || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`.trim();
+        return [
+            s.rut,
+            nombreCompleto,
+            record.status,
+            record.justification || ''
+        ];
+    });
+
+    const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_${meeting.nombre.replace(/\s+/g, '_')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function deleteAllSocias() {
+    if (!confirm('¿Estás seguro de que quieres eliminar TODAS las socias? Esta acción no se puede deshacer.')) return;
+    localStorage.removeItem('usuarios');
+    loadSocias();
+    loadAttendanceMatrix();
+    initializeDashboard();
+}
+
+function finalizarDescuento(sociaRut) {
+    if (!confirm('¿Estas seguro de que quieres finalizar el descuento de esta socia? Sera removida de la nomina de descuentos.')) return;
+    const discounts = getDiscounts();
+    delete discounts[sociaRut];
+    localStorage.setItem('discounts', JSON.stringify(discounts));
+    loadDescuentos();
+}
+
+async function notificarDescuento(sociaRut) {
+    const socias = getSocias();
+    const socia = socias.find(s => s.rut === sociaRut);
+    const discounts = getDiscounts();
+    const discount = discounts[sociaRut];
+
+    if (!socia || !discount) {
+        alert('No se encontro información de la socia o su descuento.');
+        return;
+    }
+
+    if (!driveIntegration || !driveIntegration.isSignedIn) {
+        alert('Por favor conecta con Google Drive para enviar correos.');
+        return;
+    }
+
+    const subject = `Notificacion de Descuento - SINTRAMAE`;
+    const body = `Hola ${socia.nombres},\n\nTe notificamos sobre el estado de tu descuento:\n` +
+        `Estado: ${discount.convenioActivo ? 'Activo' : 'Inactivo'}\n` +
+        `Observacion: ${discount.observacion || 'Sin observaciones'}\n\n` +
+        `Saludos,\nAdministracion SINTRAMAE`;
+
+    try {
+        await driveIntegration.sendEmail(socia.email, subject, body);
+        alert('Notificacion enviada exitosamente.');
+    } catch (error) {
+        console.error('Error sending email:', error);
+        alert('Error al enviar la notificacion. Verifica los permisos de Gmail.');
+    }
 }
 
 function deleteMeeting(id) {
@@ -151,6 +266,101 @@ function initializeDashboard() {
     document.getElementById('fotosRegistradas').textContent = fotosRegistradas;
 
     loadRecentActivity();
+    loadDashboardCalendar();
+}
+
+async function loadDashboardCalendar() {
+    const calendarEl = document.getElementById('dashboard-calendar');
+    if (!calendarEl) return;
+
+    let events = [];
+
+    // 1. Local Meetings
+    const localMeetings = getMeetings();
+    localMeetings.forEach(m => {
+        if (m.habilitada !== false) {
+            events.push({
+                title: `📌 ${m.nombre}`,
+                start: m.fecha + (m.hora ? `T${m.hora}` : ''),
+                color: '#10b981', // Emerald
+                extendedProps: { type: 'local' }
+            });
+        }
+    });
+
+    // 2. Chilean Holidays (2024-2025)
+    const holidays = [
+        { title: 'Año Nuevo', date: '2024-01-01' },
+        { title: 'Viernes Santo', date: '2024-03-29' },
+        { title: 'Sábado Santo', date: '2024-03-30' },
+        { title: 'Día del Trabajo', date: '2024-05-01' },
+        { title: 'Glorias Navales', date: '2024-05-21' },
+        { title: 'San Pedro y San Pablo', date: '2024-06-29' },
+        { title: 'Asunción de la Virgen', date: '2024-08-15' },
+        { title: 'Fiestas Patrias', date: '2024-09-18' },
+        { title: 'Glorias del Ejército', date: '2024-09-19' },
+        { title: 'Encuentro de Dos Mundos', date: '2024-10-12' },
+        { title: 'Día de las Iglesias Evangélicas', date: '2024-10-31' },
+        { title: 'Día de Todos los Santos', date: '2024-11-01' },
+        { title: 'Inmaculada Concepción', date: '2024-12-08' },
+        { title: 'Navidad', date: '2024-12-25' },
+        { title: 'Año Nuevo', date: '2025-01-01' }
+    ];
+
+    holidays.forEach(h => {
+        events.push({
+            title: `🇨🇱 ${h.title}`,
+            start: h.date,
+            allDay: true,
+            color: '#f43f5e', // Rose
+            display: 'block'
+        });
+    });
+
+    // 3. Google Calendar Events
+    if (driveIntegration && driveIntegration.isSignedIn) {
+        try {
+            const response = await gapi.client.calendar.events.list({
+                'calendarId': 'primary',
+                'timeMin': (new Date()).toISOString(),
+                'showDeleted': false,
+                'singleEvents': true,
+                'maxResults': 15,
+                'orderBy': 'startTime'
+            });
+            const driveEvents = response.result.items || [];
+            driveEvents.forEach(e => {
+                events.push({
+                    title: `☁️ ${e.summary}`,
+                    start: e.start.dateTime || e.start.date,
+                    end: e.end.dateTime || e.end.date,
+                    url: e.htmlLink,
+                    color: '#3b82f6' // Blue
+                });
+            });
+        } catch (error) {
+            console.error('Error fetching events for dashboard:', error);
+        }
+    }
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: events,
+        eventClick: function (info) {
+            if (info.event.url) {
+                window.open(info.event.url, '_blank');
+                info.jsEvent.preventDefault();
+            }
+        },
+        height: 'auto'
+    });
+    calendar.render();
 }
 
 function loadRecentActivity() {
@@ -308,7 +518,7 @@ function loadMeetings() {
     }
 
     container.innerHTML = meetings.map(m => `
-        <div class="meeting-card">
+        <div class="meeting-card ${m.habilitada === false ? 'meeting-disabled' : ''}">
             <div class="meeting-header">
                 <h3>${m.nombre}</h3>
                 <span class="status-badge status-${m.estado.toLowerCase()}">${m.estado}</span>
@@ -316,9 +526,18 @@ function loadMeetings() {
             <div class="meeting-details">
                 <p><i data-lucide="calendar"></i> ${m.fecha}</p>
                 <p><i data-lucide="clock"></i> ${m.hora}</p>
-                <p><i data-lucide="file-text"></i> ${m.descripcion || 'Sin descripción'}</p>
+                <div class="meeting-controls" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" ${m.habilitada !== false ? 'checked' : ''} onchange="toggleMeetingStatus('${m.id}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">${m.habilitada !== false ? 'Habilitada' : 'Deshabilitada'}</span>
+                </div>
             </div>
             <div class="meeting-actions">
+                <button class="btn-secondary btn-sm" onclick="exportMeetingReport('${m.id}')" title="Descargar Informe">
+                    <i data-lucide="file-down"></i> Informe
+                </button>
                 <button class="btn-icon" onclick="deleteMeetingConfirm('${m.id}')" title="Eliminar">
                     <i data-lucide="trash-2"></i>
                 </button>
@@ -329,37 +548,149 @@ function loadMeetings() {
     lucide.createIcons();
 }
 
+// Sorting logic
+function sortTable(criteria) {
+    if (currentSociasSort.criteria === criteria) {
+        currentSociasSort.direction = currentSociasSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSociasSort.criteria = criteria;
+        currentSociasSort.direction = 'asc';
+    }
+
+    // Update UI headers
+    document.querySelectorAll('.data-table th.sortable').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        const icon = th.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'chevrons-up-down');
+    });
+
+    const activeTh = Array.from(document.querySelectorAll('.data-table th.sortable')).find(th =>
+        th.getAttribute('onclick')?.includes(`'${criteria}'`)
+    );
+
+    if (activeTh) {
+        activeTh.classList.add(`sorted-${currentSociasSort.direction}`);
+        const icon = activeTh.querySelector('i');
+        if (icon) {
+            icon.setAttribute('data-lucide', currentSociasSort.direction === 'asc' ? 'chevron-up' : 'chevron-down');
+        }
+    }
+
+    lucide.createIcons();
+    loadSocias();
+}
+
+// Column filtering logic
+function filterTableColumns(category) {
+    currentSociasCategory = category;
+
+    // Update tabs UI
+    document.querySelectorAll('.table-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.innerText.toLowerCase().includes(category === 'laboral' ? 'institucional' : category.toLowerCase())) {
+            tab.classList.add('active');
+        }
+    });
+
+    if (category === 'all') {
+        document.querySelectorAll('.table-tab')[0].classList.add('active');
+    }
+
+    loadSocias();
+}
+
 // Load socias table
 function loadSocias() {
-    const socias = getSocias();
+    let socias = getSocias();
     const tbody = document.getElementById('sociasTableBody');
 
     if (!tbody) return;
 
+    // Apply Search Filter
+    if (currentSociasQuery) {
+        const query = currentSociasQuery.toLowerCase();
+        socias = socias.filter(s =>
+            (s.rut && s.rut.toLowerCase().includes(query)) ||
+            (s.nombres && s.nombres.toLowerCase().includes(query)) ||
+            (s.apellidoPaterno && s.apellidoPaterno.toLowerCase().includes(query)) ||
+            (s.apellidoMaterno && s.apellidoMaterno.toLowerCase().includes(query)) ||
+            (s.comuna && s.comuna.toLowerCase().includes(query)) ||
+            (s.empresa && s.empresa.toLowerCase().includes(query))
+        );
+    }
+
+    // Apply Sorting
+    if (currentSociasSort.criteria) {
+        socias.sort((a, b) => {
+            let valA = a[currentSociasSort.criteria] || '';
+            let valB = b[currentSociasSort.criteria] || '';
+
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return currentSociasSort.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return currentSociasSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
     if (socias.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay socias registradas</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="20" class="empty-state">No hay socias registradas</td></tr>';
         return;
     }
 
+    // Category mapping (index of columns to show/hide)
+    // Indexes: 0:NumReg, 1:RUT, 2:Nombres, 3:Pat, 4:Mat, 5:Comuna, 6:RegAnt, 7:FNac, 8:Edad, 9:ECivil, 10:Celular, 11:Dir, 12:Email, 13:RBD, 14:AñoPAE, 15:HMen, 16:HMay, 17:Emp, 18:Est, 19:Acc
+    const categories = {
+        'all': Array.from({ length: 20 }, (_, i) => i),
+        'basico': [0, 1, 2, 3, 4, 18, 19],
+        'contacto': [1, 2, 3, 5, 10, 11, 12, 19],
+        'personal': [1, 2, 3, 7, 8, 9, 15, 16, 19],
+        'laboral': [0, 1, 2, 3, 6, 13, 14, 17, 18, 19]
+    };
+
+    const visibleCols = categories[currentSociasCategory] || categories['all'];
+
+    // Update header visibility
+    document.querySelectorAll('.data-table thead th').forEach((th, i) => {
+        if (visibleCols.includes(i)) th.classList.remove('col-hidden');
+        else th.classList.add('col-hidden');
+    });
+
     tbody.innerHTML = socias.map(s => {
-        const nombreCompleto = `${s.nombres || s.nombre || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`.trim();
-        return `
-        <tr>
-            <td>${s.rut}</td>
-            <td>${nombreCompleto}</td>
-            <td>${s.email}</td>
-            <td>${s.banco || '-'}</td>
-            <td>${s.cuenta || '-'}</td>
-            <td>${s.talla || '-'}</td>
-            <td>${s.zapatos || '-'}</td>
-            <td><span class="status-badge status-${s.estado.toLowerCase()}">${s.estado}</span></td>
-            <td class="action-buttons">
+        const row = [
+            s.numReg || '-',
+            s.rut,
+            s.nombres || '-',
+            s.apellidoPaterno || '-',
+            s.apellidoMaterno || '-',
+            s.comuna || '-',
+            s.numRegAnt || '-',
+            s.fechaNacimiento || '-',
+            s.edad || '-',
+            s.estadoCivil || '-',
+            s.celular || '-',
+            s.direccion || '-',
+            s.email || '-',
+            s.rbd || '-',
+            s.anoIngresoPae || '-',
+            s.hijosMenores || '0',
+            s.hijosMayores || '0',
+            s.empresa || '-',
+            `<span class="status-badge status-${(s.estado || 'Activo').toLowerCase()}">${s.estado || 'Activo'}</span>`,
+            `<div class="action-buttons">
                 <button class="btn-icon" onclick="deleteSociaConfirm('${s.rut}')" title="Eliminar">
                     <i data-lucide="trash-2"></i>
                 </button>
-            </td>
-        </tr>
-    `;
+            </div>`
+        ];
+
+        const cells = row.map((cell, i) => {
+            const hiddenClass = visibleCols.includes(i) ? '' : 'class="col-hidden"';
+            return `<td ${hiddenClass}>${cell}</td>`;
+        }).join('');
+
+        return `<tr>${cells}</tr>`;
     }).join('');
 
     lucide.createIcons();
@@ -397,9 +728,15 @@ function loadDescuentos() {
                     <input type="text" class="observacion-input"
                         value="${discount.observacion || ''}"
                         onblur="saveObservacion('${s.rut}', this.value)"
-                        placeholder="Ingresa observación...">
+                        placeholder="Ingresa observacion...">
                 </td>
                 <td class="action-buttons">
+                    <button class="btn-primary btn-sm" onclick="notificarDescuento('${s.rut}')" title="Notificar">
+                        <i data-lucide="mail"></i> Notificar
+                    </button>
+                    <button class="btn-secondary btn-sm" onclick="finalizarDescuento('${s.rut}')" title="Finalizar Descuento">
+                        <i data-lucide="check-circle"></i> Finalizar
+                    </button>
                     <button class="btn-icon" onclick="clearDiscount('${s.rut}')" title="Limpiar">
                         <i data-lucide="x"></i>
                     </button>
@@ -494,15 +831,28 @@ function setupEventListeners() {
             e.preventDefault();
 
             const rut = document.getElementById('sociaRut').value;
-            const nombres = document.getElementById('sociaNombres').value;
-            const apellidoPaterno = document.getElementById('sociaApellidoPaterno').value;
-            const apellidoMaterno = document.getElementById('sociaApellidoMaterno').value;
-            const email = document.getElementById('sociaEmail').value;
-            const estado = document.getElementById('sociaEstado').value;
-            const banco = document.getElementById('sociaBanco').value;
-            const cuenta = document.getElementById('sociaCuenta').value;
-            const talla = document.getElementById('sociaTalla').value;
-            const zapatos = document.getElementById('sociaZapatos').value;
+            const socia = {
+                numReg: document.getElementById('sociaNumReg').value,
+                rut: formatRUT(rut),
+                nombres: document.getElementById('sociaNombres').value,
+                apellidoPaterno: document.getElementById('sociaApellidoPaterno').value,
+                apellidoMaterno: document.getElementById('sociaApellidoMaterno').value,
+                comuna: document.getElementById('sociaComuna').value,
+                numRegAnt: document.getElementById('sociaNumRegAnt').value,
+                fechaNacimiento: document.getElementById('sociaFechaNacimiento').value,
+                edad: document.getElementById('sociaEdad').value,
+                estadoCivil: document.getElementById('sociaEstadoCivil').value,
+                celular: document.getElementById('sociaCelular').value,
+                direccion: document.getElementById('sociaDireccion').value,
+                email: document.getElementById('sociaEmail').value,
+                estado: document.getElementById('sociaEstado').value,
+                rbd: document.getElementById('sociaRBD').value,
+                anoIngresoPae: document.getElementById('sociaAnoIngresoPae').value,
+                hijosMenores: document.getElementById('sociaHijosMenores').value,
+                hijosMayores: document.getElementById('sociaHijosMayores').value,
+                empresa: document.getElementById('sociaEmpresa').value,
+                fechaRegistro: new Date().toLocaleDateString('es-CL')
+            };
 
             if (!validateRUT(rut)) {
                 alert('RUT inválido');
@@ -514,20 +864,6 @@ function setupEventListeners() {
                 alert('Este RUT ya está registrado');
                 return;
             }
-
-            const socia = {
-                rut: formatRUT(rut),
-                nombres: nombres,
-                apellidoPaterno: apellidoPaterno,
-                apellidoMaterno: apellidoMaterno,
-                email: email,
-                estado: estado,
-                banco: banco,
-                cuenta: cuenta,
-                talla: talla,
-                zapatos: zapatos,
-                fechaRegistro: new Date().toLocaleDateString('es-CL')
-            };
 
             saveSocia(socia);
             loadSocias();
@@ -572,13 +908,8 @@ function setupEventListeners() {
     const searchSocias = document.getElementById('searchSocias');
     if (searchSocias) {
         searchSocias.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('#sociasTableBody tr');
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
-            });
+            currentSociasQuery = e.target.value;
+            loadSocias();
         });
     }
 
@@ -606,11 +937,15 @@ function importCSV(csv) {
     let imported = 0;
     let errors = 0;
 
+    // Expected format: numReg, rut, nombres, apPaterno, apMaterno, comuna, numRegAnt, fNac, edad, estCivil, celular, direccion, email, rbd, anoPae, hMenores, hMayores, empresa
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
 
-        const [rut, nombres, apellidoPaterno, apellidoMaterno, email, estado] = line.split(',').map(s => s.trim());
+        const parts = line.split(',').map(s => s.trim());
+        if (parts.length < 2) { errors++; continue; }
+
+        const [numReg, rut, nombres, apPat, apMat, comuna, regAnt, fNac, edad, ecivil, cel, dir, email, rbd, anoPae, hMen, hMay, emp] = parts;
 
         if (!validateRUT(rut)) {
             errors++;
@@ -623,12 +958,25 @@ function importCSV(csv) {
         }
 
         socias.push({
+            numReg: numReg || '',
             rut: formatRUT(rut),
-            nombres: nombres,
-            apellidoPaterno: apellidoPaterno,
-            apellidoMaterno: apellidoMaterno,
-            email: email,
-            estado: estado || 'Activo',
+            nombres: nombres || '',
+            apellidoPaterno: apPat || '',
+            apellidoMaterno: apMat || '',
+            comuna: comuna || '',
+            numRegAnt: regAnt || '',
+            fechaNacimiento: fNac || '',
+            edad: edad || '',
+            estadoCivil: ecivil || '',
+            celular: cel || '',
+            direccion: dir || '',
+            email: email || '',
+            rbd: rbd || '',
+            anoIngresoPae: anoPae || '',
+            hijosMenores: hMen || '0',
+            hijosMayores: hMay || '0',
+            empresa: emp || '',
+            estado: 'Activo',
             fechaRegistro: new Date().toLocaleDateString('es-CL')
         });
         imported++;
@@ -636,7 +984,9 @@ function importCSV(csv) {
 
     localStorage.setItem('usuarios', JSON.stringify(socias));
 
-    alert(`Importación completada:\n${imported} socias importadas\n${errors} errores`);
+    if (driveIntegration) driveIntegration.syncData();
+
+    alert(`Importación completada:\n✅ ${imported} socias importadas\n❌ ${errors} errores o duplicados`);
 
     loadSocias();
     loadAttendanceMatrix();
@@ -652,6 +1002,8 @@ function deleteSociaConfirm(rut) {
     loadSocias();
     loadAttendanceMatrix();
     initializeDashboard();
+
+    if (driveIntegration) driveIntegration.syncData();
 }
 
 function deleteMeetingConfirm(id) {

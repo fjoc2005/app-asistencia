@@ -8,15 +8,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="styles.css">
-
-    <!-- Manifest for PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4F46E5">
-
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="admin-page">
@@ -127,6 +123,12 @@
                     </div>
                 </div>
 
+                <!-- Calendar Section -->
+                <div class="calendar-section animate-scale-in" style="animation-delay: 0.5s; margin: 2rem 0;">
+                    <h2>Próximos Eventos</h2>
+                    <div id="dashboard-calendar"></div>
+                </div>
+
                 <div class="recent-activity">
                     <h2>Actividad Reciente</h2>
                     <div id="recentActivityList" class="activity-list">
@@ -199,6 +201,10 @@
                             <i data-lucide="upload"></i>
                             Importar CSV
                         </button>
+                        <button class="btn-danger" onclick="deleteAllSocias()">
+                            <i data-lucide="trash-2"></i>
+                            Eliminar Todas
+                        </button>
                         <button class="btn-primary" onclick="showNuevaSociaModal()">
                             <i data-lucide="user-plus"></i>
                             Nueva Socia
@@ -206,24 +212,64 @@
                     </div>
                 </div>
 
+                <div class="table-tabs-container">
+                    <div class="table-tabs">
+                        <button class="table-tab active" onclick="filterTableColumns('all')">Todo</button>
+                        <button class="table-tab" onclick="filterTableColumns('basico')">Básico</button>
+                        <button class="table-tab" onclick="filterTableColumns('contacto')">Contacto</button>
+                        <button class="table-tab" onclick="filterTableColumns('personal')">Personal</button>
+                        <button class="table-tab" onclick="filterTableColumns('laboral')">Institucional</button>
+                    </div>
+                </div>
+
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>RUT</th>
-                                <th>Nombre</th>
-                                <th>Email</th>
-                                <th>Banco</th>
-                                <th>Cuenta</th>
-                                <th>Talla</th>
-                                <th>Zapatos</th>
-                                <th>Estado</th>
+                                <th onclick="sortTable('numReg')" class="sortable">N° REG <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('rut')" class="sortable">RUT <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('nombres')" class="sortable">Nombres <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('apellidoPaterno')" class="sortable">Ap. Paterno <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('apellidoMaterno')" class="sortable">Ap. Materno <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('comuna')" class="sortable">Comuna <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('numRegAnt')" class="sortable">Reg. Ant <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('fechaNacimiento')" class="sortable">F. Nac <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('edad')" class="sortable">Edad <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('estadoCivil')" class="sortable">Est. Civil <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('celular')" class="sortable">Celular <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('direccion')" class="sortable">Dirección <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('email')" class="sortable">Email <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('rbd')" class="sortable">RBD <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('anoIngresoPae')" class="sortable">Año PAE <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('hijosMenores')" class="sortable">H. Menores <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('hijosMayores')" class="sortable">H. Mayores <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('empresa')" class="sortable">Empresa <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('estado')" class="sortable">Estado <i
+                                        data-lucide="chevrons-up-down"></i></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="sociasTableBody">
                             <tr>
-                                <td colspan="9" class="empty-state">No hay socias registradas</td>
+                                <td colspan="20" class="empty-state">No hay socias registradas</td>
                             </tr>
                         </tbody>
                     </table>
@@ -438,9 +484,16 @@
             <form id="nuevaSociaForm">
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="sociaNumReg">N° de REG *</label>
+                        <input type="text" id="sociaNumReg" placeholder="1234" required>
+                    </div>
+                    <div class="form-group">
                         <label for="sociaRut">RUT *</label>
                         <input type="text" id="sociaRut" placeholder="12.345.678-9" required>
                     </div>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
                         <label for="sociaNombres">Nombres *</label>
                         <input type="text" id="sociaNombres" placeholder="María José" required>
@@ -460,7 +513,51 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="sociaEmail">Email *</label>
+                        <label for="sociaComuna">Comuna</label>
+                        <input type="text" id="sociaComuna" placeholder="Las Condes">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaNumRegAnt">N° REG ANT</label>
+                        <input type="text" id="sociaNumRegAnt" placeholder="5678">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaFechaNacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="sociaFechaNacimiento">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaEdad">Edad</label>
+                        <input type="number" id="sociaEdad" placeholder="25">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaEstadoCivil">Estado Civil</label>
+                        <select id="sociaEstadoCivil">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="Soltera">Soltera</option>
+                            <option value="Casada">Casada</option>
+                            <option value="Divorciada">Divorciada</option>
+                            <option value="Viuda">Viuda</option>
+                            <option value="Conviviente">Conviviente</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaCelular">Número de Celular</label>
+                        <input type="tel" id="sociaCelular" placeholder="+569 1234 5678">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaDireccion">Dirección</label>
+                        <input type="text" id="sociaDireccion" placeholder="Av. Siempre Viva 123">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sociaEmail">Correo Electrónico *</label>
                         <input type="email" id="sociaEmail" placeholder="maria@email.com" required>
                     </div>
                     <div class="form-group">
@@ -474,31 +571,27 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="sociaBanco">Banco</label>
-                        <input type="text" id="sociaBanco" placeholder="Banco de Chile">
+                        <label for="sociaRBD">RBD</label>
+                        <input type="text" id="sociaRBD" placeholder="9876-5">
                     </div>
                     <div class="form-group">
-                        <label for="sociaCuenta">Número de Cuenta</label>
-                        <input type="text" id="sociaCuenta" placeholder="123456789">
+                        <label for="sociaAnoIngresoPae">Año Ingreso PAE</label>
+                        <input type="number" id="sociaAnoIngresoPae" placeholder="2020" min="1950" max="2099">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="sociaTalla">Talla</label>
-                        <select id="sociaTalla">
-                            <option value="">-- Seleccionar --</option>
-                            <option value="XS">XS</option>
-                            <option value="S">S</option>
-                            <option value="M">M</option>
-                            <option value="L">L</option>
-                            <option value="XL">XL</option>
-                            <option value="XXL">XXL</option>
-                        </select>
+                        <label for="sociaHijosMenores">Hijos Menores</label>
+                        <input type="number" id="sociaHijosMenores" placeholder="0" min="0">
                     </div>
                     <div class="form-group">
-                        <label for="sociaZapatos">Talla Zapatos</label>
-                        <input type="number" id="sociaZapatos" placeholder="37" min="30" max="50">
+                        <label for="sociaHijosMayores">Hijos Mayores</label>
+                        <input type="number" id="sociaHijosMayores" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaEmpresa">Empresa</label>
+                        <input type="text" id="sociaEmpresa" placeholder="Sintramae Corp">
                     </div>
                 </div>
 
@@ -583,10 +676,15 @@
         </div>
     </div>
 
+    <!-- AI Assistant Reminder Bubble -->
+    <div id="ai-reminder-bubble" class="ai-reminder-bubble" onclick="toggleAIChat()">
+        ¡Hola! 👋 Soy Teresita. ¿Sabías que puedo ayudarte a crear una reunión rápidamente?
+    </div>
+
     <!-- AI Assistant Chat -->
     <button class="ai-chat-button" id="aiChatButton" onclick="toggleAIChat()">
-        <img src="teresita.png" alt="Teresita" class="ai-avatar-img">
-        <span class="ai-notification-dot"></span>
+        <i data-lucide="sparkles"></i>
+        <div class="ai-badge">IA</div>
     </button>
 
     <div class="ai-chat-panel" id="aiChatPanel">
@@ -607,20 +705,14 @@
         </div>
 
         <div class="ai-quick-actions" id="aiQuickActions">
+            <button class="quick-action-chip" onclick="sendQuickAction('Crear nueva reunión')">
+                <i data-lucide="calendar-plus"></i> Crear reunión
+            </button>
             <button class="quick-action-chip" onclick="sendQuickAction('Agregar nueva socia')">
                 <i data-lucide="user-plus"></i> Agregar nueva socia
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Modificar datos')">
-                <i data-lucide="edit"></i> Modificar datos
-            </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Ingresar descuento')">
-                <i data-lucide="percent"></i> Ingresar descuento
-            </button>
             <button class="quick-action-chip" onclick="sendQuickAction('Reporte individual')">
-                <i data-lucide="file-text"></i> Reporte individual
-            </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Reporte grupal')">
-                <i data-lucide="files"></i> Reporte grupal
+                <i data-lucide="file-text"></i> Reporte
             </button>
         </div>
 
