@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asistencia-app-v3';
+const CACHE_NAME = 'asistencia-app-v4';
 const urlsToCache = [
     './',
     './index.html',
@@ -8,6 +8,7 @@ const urlsToCache = [
     './admin.js',
     './ai-assistant.js',
     './google-drive-integration.js',
+    './version-control.js',
     './teresita.png',
     'https://unpkg.com/lucide@latest'
 ];

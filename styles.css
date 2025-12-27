@@ -453,7 +453,7 @@ h4,
 }
 
 .data-table th.sortable:hover {
-    background: rgba(0, 0, 0, 0.02);
+    background: #f1f5f9;
     color: var(--clr-socias);
 }
 
@@ -465,25 +465,6 @@ h4,
 .data-table th.sorted-desc i {
     opacity: 1;
     color: var(--clr-socias);
-}
-
-.data-table th.sortable:hover {
-    background: #f1f5f9;
-    color: var(--primary);
-}
-
-.data-table th.sortable i {
-    width: 14px;
-    height: 14px;
-    margin-left: 4px;
-    vertical-align: middle;
-    opacity: 0.5;
-}
-
-.data-table th.sorted-asc i,
-.data-table th.sorted-desc i {
-    opacity: 1;
-    color: var(--primary);
 }
 
 .data-table td {
@@ -499,7 +480,7 @@ h4,
 }
 
 .data-table tbody tr:hover {
-    background: #f1f5f9;
+    background: #f8fafc;
 }
 
 .empty-state {
