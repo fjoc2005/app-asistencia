@@ -13,7 +13,7 @@
         rel="stylesheet">
 
     <script src="version-control.js"></script>
-    <link rel="stylesheet" href="styles.css?v=3.0.4">
+    <link rel="stylesheet" href="styles.css?v=3.0.5">
 
     <!-- FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -86,7 +86,8 @@
             <!-- Dashboard View -->
             <div id="dashboardView" class="view-content active">
                 <div class="stats-grid">
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.1s">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.1s; cursor: pointer;"
+                        onclick="showView('nominaSocias')">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                             <i data-lucide="users"></i>
                         </div>
@@ -96,7 +97,8 @@
                         </div>
                     </div>
 
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.2s">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.2s; cursor: pointer;"
+                        onclick="showView('controlAsistencia'); showControlTab('matriz');">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                             <i data-lucide="calendar-check"></i>
                         </div>
@@ -106,7 +108,8 @@
                         </div>
                     </div>
 
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.3s">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.3s; cursor: pointer;"
+                        onclick="showView('controlAsistencia'); showControlTab('reuniones');">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                             <i data-lucide="calendar"></i>
                         </div>
@@ -230,6 +233,7 @@
                     <table class="data-table">
                         <thead>
                             <tr>
+                                <th class="sticky-col">Acciones</th>
                                 <th onclick="sortTable('numReg')" class="sortable">N° REG <i
                                         data-lucide="chevrons-up-down"></i></th>
                                 <th onclick="sortTable('rut')" class="sortable">RUT <i
@@ -735,9 +739,9 @@
         </div>
     </div>
 
-    <script src="google-drive-integration.js?v=3.0.4"></script>
-    <script src="ai-assistant.js?v=3.0.4"></script>
-    <script src="admin.js?v=3.0.4"></script>
+    <script src="google-drive-integration.js?v=3.0.5"></script>
+    <script src="ai-assistant.js?v=3.0.5"></script>
+    <script src="admin.js?v=3.0.5"></script>
     <script>
         lucide.createIcons();
     </script>

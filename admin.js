@@ -640,13 +640,13 @@ function loadSocias() {
     }
 
     // Category mapping (index of columns to show/hide)
-    // Indexes: 0:NumReg, 1:RUT, 2:Nombres, 3:Pat, 4:Mat, 5:Comuna, 6:RegAnt, 7:FNac, 8:Edad, 9:ECivil, 10:Celular, 11:Dir, 12:Email, 13:RBD, 14:AñoPAE, 15:HMen, 16:HMay, 17:Emp, 18:Est, 19:Acc
+    // Indexes: 0:Acc, 1:NumReg, 2:RUT, 3:Nombres, 4:Pat, 5:Mat, 6:Comuna, 7:RegAnt, 8:FNac, 9:Edad, 10:ECivil, 11:Celular, 12:Dir, 13:Email, 14:RBD, 15:AñoPAE, 16:HMen, 17:HMay, 18:Emp, 19:Est
     const categories = {
         'all': Array.from({ length: 20 }, (_, i) => i),
-        'basico': [0, 1, 2, 3, 4, 18, 19],
-        'contacto': [1, 2, 3, 5, 10, 11, 12, 19],
-        'personal': [1, 2, 3, 7, 8, 9, 15, 16, 19],
-        'laboral': [0, 1, 2, 3, 6, 13, 14, 17, 18, 19]
+        'basico': [0, 1, 2, 3, 4, 5, 19],
+        'contacto': [0, 2, 3, 4, 6, 11, 12, 13],
+        'personal': [0, 2, 3, 4, 8, 9, 10, 16, 17],
+        'laboral': [0, 1, 2, 3, 4, 7, 14, 15, 18, 19]
     };
 
     const visibleCols = categories[currentSociasCategory] || categories['all'];
@@ -659,6 +659,11 @@ function loadSocias() {
 
     tbody.innerHTML = socias.map(s => {
         const row = [
+            `<div class="action-buttons">
+                <button class="btn-icon" onclick="deleteSociaConfirm('${s.rut}')" title="Eliminar">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>`,
             s.numReg || '-',
             s.rut,
             s.nombres || '-',
@@ -677,12 +682,7 @@ function loadSocias() {
             s.hijosMenores || '0',
             s.hijosMayores || '0',
             s.empresa || '-',
-            `<span class="status-badge status-${(s.estado || 'Activo').toLowerCase()}">${s.estado || 'Activo'}</span>`,
-            `<div class="action-buttons">
-                <button class="btn-icon" onclick="deleteSociaConfirm('${s.rut}')" title="Eliminar">
-                    <i data-lucide="trash-2"></i>
-                </button>
-            </div>`
+            `<span class="status-badge status-${(s.estado || 'Activo').toLowerCase()}">${s.estado || 'Activo'}</span>`
         ];
 
         const cells = row.map((cell, i) => {

@@ -3,7 +3,7 @@
  * Forces cache clearing and hard reload on version mismatch
  */
 
-const APP_VERSION = '3.0.4'; // Incremented to v3.0.4
+const APP_VERSION = '3.0.5'; // Incremented to v3.0.4
 
 (function () {
     console.log('Verificando versión de la aplicación: ' + APP_VERSION);

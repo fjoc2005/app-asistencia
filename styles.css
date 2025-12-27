@@ -314,21 +314,23 @@ h4,
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.1);
+    /* Darker background for contrast */
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(15, 23, 42, 0.2);
     border-radius: 14px;
-    color: var(--white);
+    color: #0f172a;
+    /* Darker text */
     text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
+    font-weight: 600;
+    font-size: 0.95rem;
     transition: all 0.3s ease;
 }
 
 .btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.15);
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
 }
 
 .branding-footer-home {
@@ -468,6 +470,11 @@ h4,
     margin-left: 280px;
     padding: 2.5rem;
     transition: var(--trans-base);
+    background: var(--bg-main);
+    /* Ensure solid background */
+    min-height: 100vh;
+    z-index: 10;
+    position: relative;
 }
 
 .admin-header {
@@ -598,6 +605,8 @@ h4,
     box-shadow: var(--shadow-soft);
     overflow: auto;
     border: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
+    /* For sticky header/columns */
 }
 
 .table-tabs-container {
@@ -707,6 +716,24 @@ h4,
     vertical-align: middle;
 }
 
+/* Sticky Action Column */
+.data-table th:first-child,
+.data-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: #f8fafc;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.data-table td:first-child {
+    background: var(--white);
+}
+
+.data-table tr:hover td:first-child {
+    background: #f8fafc;
+}
+
 .data-table tbody tr {
     transition: var(--trans-fast);
 }
@@ -745,6 +772,21 @@ h4,
 .action-buttons {
     display: flex;
     gap: var(--spacing-xs);
+    align-items: center;
+}
+
+.meeting-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    border-top: 1px solid var(--gray-100);
+    padding-top: 1rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
 }
 
 .btn-icon {
