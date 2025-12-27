@@ -85,6 +85,44 @@ h4,
     transition: var(--trans-base);
 }
 
+.main-action {
+    margin-bottom: 2.5rem;
+}
+
+.secondary-actions {
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.branding-footer-home {
+    margin-top: auto;
+    padding-top: 1rem;
+    opacity: 0.8;
+}
+
 .sidebar-header {
     padding: 2rem;
     background: rgba(255, 255, 255, 0.03);
@@ -366,7 +404,8 @@ h4,
 .table-tab.active {
     background: var(--white);
     color: var(--clr-socias);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
 }
 
 /* Column Visibility Classes */
@@ -398,6 +437,34 @@ h4,
     cursor: pointer;
     transition: var(--trans-fast);
     user-select: none;
+    position: relative;
+    padding-right: 2.5rem;
+}
+
+.data-table th.sortable i {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    opacity: 0.5;
+    transition: var(--trans-fast);
+}
+
+.data-table th.sortable:hover {
+    background: rgba(0, 0, 0, 0.02);
+    color: var(--clr-socias);
+}
+
+.data-table th.sortable:hover i {
+    opacity: 1;
+}
+
+.data-table th.sorted-asc i,
+.data-table th.sorted-desc i {
+    opacity: 1;
+    color: var(--clr-socias);
 }
 
 .data-table th.sortable:hover {
@@ -420,10 +487,11 @@ h4,
 }
 
 .data-table td {
-    padding: 1.25rem 1.5rem;
-    border-top: 1px solid #f1f5f9;
-    font-size: 0.95rem;
+    padding: 1rem 1.5rem;
     color: #334155;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
 }
 
 .data-table tbody tr {
