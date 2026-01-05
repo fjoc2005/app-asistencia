@@ -20,49 +20,65 @@
         <div class="registro-card animate-scale-in">
             <div class="registro-header">
                 <div class="logo-icon-small">
-                    <i data-lucide="user-check"></i>
+                    <i data-lucide="scan-line"></i>
                 </div>
                 <h2>Registro de Asistencia</h2>
-                <p id="headerText">Ingresa tu RUT para registrar tu asistencia</p>
+                <p id="headerText">Escanea tu Carnet de Identidad o ingresa tu RUT</p>
             </div>
 
-            <!-- RUT Input Section -->
-            <form id="registroForm" class="registro-form">
+            <!-- Mode Switcher -->
+            <div class="mode-switcher">
+                <button class="mode-btn active" id="btnModeScan" onclick="switchMode('scan')">
+                    <i data-lucide="qr-code"></i> Escanear
+                </button>
+                <button class="mode-btn" id="btnModeManual" onclick="switchMode('manual')">
+                    <i data-lucide="keyboard"></i> Tipear
+                </button>
+            </div>
+
+            <!-- QR Scanner Section -->
+            <div id="scanSection" class="scan-section">
+                <div id="reader"></div>
+                <p class="scan-instruction">Apunta el código QR de tu carnet a la cámara</p>
+            </div>
+
+            <!-- RUT Input Section (Hidden by default) -->
+            <form id="registroForm" class="registro-form" style="display: none;">
                 <div class="form-group">
                     <label for="rut">
                         <i data-lucide="id-card"></i>
                         RUT
                     </label>
                     <div class="input-group">
-                        <input type="tel" id="rut" name="rut" placeholder="12345678-9" required maxlength="12"
-                            autocomplete="off" autofocus inputmode="numeric">
+                        <input type="tel" id="rut" name="rut" placeholder="12345678-9" maxlength="12" autocomplete="off"
+                            inputmode="numeric">
                         <button type="button" class="btn-k" id="btnK">K</button>
                     </div>
                     <small class="input-hint">Formato: 12.345.678-9</small>
                 </div>
 
-                <div id="userInfo" class="user-info" style="display: none;">
-                    <div class="user-card">
-                        <i data-lucide="user" class="user-icon"></i>
-                        <div class="user-details">
-                            <span class="user-label">Nombre:</span>
-                            <span id="userName" class="user-name"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="errorMessage" class="error-message" style="display: none;">
-                    <i data-lucide="alert-circle"></i>
-                    <span></span>
-                </div>
-
                 <button type="submit" class="btn-success btn-confirmar" id="btnConfirmar" disabled>
-                    <i data-lucide="camera"></i>
-                    TOMAR FOTOGRAFÍA
+                    <i data-lucide="check-circle"></i>
+                    CONFIRMAR ASISTENCIA
                 </button>
             </form>
 
-            <!-- Photo Capture Section -->
+            <div id="userInfo" class="user-info" style="display: none;">
+                <div class="user-card">
+                    <i data-lucide="user" class="user-icon"></i>
+                    <div class="user-details">
+                        <span class="user-label">Nombre:</span>
+                        <span id="userName" class="user-name"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i data-lucide="alert-circle"></i>
+                <span></span>
+            </div>
+
+            <!-- Photo Capture Section (Post-identification) -->
             <div id="photoCaptureSection" class="photo-capture-section" style="display: none;">
                 <h3>Toma tu fotografía</h3>
                 <p>Posiciónate frente a la cámara</p>
@@ -93,7 +109,7 @@
                     Volver al inicio
                 </a>
                 <div class="branding-footer">
-                    Desarrollado por <strong>Sintramae</strong>
+                    Desarrollado para <strong>Sintramae</strong>
                 </div>
             </div>
         </div>
@@ -116,6 +132,7 @@
         <div class="circle circle-2"></div>
     </div>
 
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="google-drive.js?v=3.0.4"></script>
     <script src="app.js?v=3.0.4"></script>

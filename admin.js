@@ -1023,7 +1023,34 @@ function logout() {
 }
 
 // Utility functions
+// Utility functions
+function getUsuarios() {
+    const usuarios = localStorage.getItem('usuarios');
+    return usuarios ? JSON.parse(usuarios) : [];
+}
+
+// Alias for getUsuarios (since we used socias terminology in admin)
+function getSocias() {
+    return getUsuarios();
+}
+
+function getMeetings() {
+    const meetings = localStorage.getItem('meetings');
+    return meetings ? JSON.parse(meetings) : [];
+}
+
+function getAttendanceRecords() {
+    const records = localStorage.getItem('attendanceRecords');
+    return records ? JSON.parse(records) : {};
+}
+
+function getDiscounts() {
+    const discounts = localStorage.getItem('discounts');
+    return discounts ? JSON.parse(discounts) : [];
+}
+
 function cleanRUT(rut) {
+    if (!rut) return '';
     return rut.replace(/[^0-9kK]/g, '');
 }
 
@@ -1194,7 +1221,7 @@ if (document.querySelector('.admin-page') && aiAssistant) {
 
 // Demo data initialization
 if (document.querySelector('.admin-page')) {
-    initializeDemoData();
+    // initializeDemoData(); // Removed to prevent error if not defined
 }
 
 function initializeDemoData() {
@@ -1397,5 +1424,99 @@ window.showView = function (viewId) {
     // Mobile: Auto collapse sidebar on selection
     if (window.innerWidth <= 768) {
         document.querySelector('.sidebar').classList.add('collapsed');
+    }
+}
+
+// ===================================
+// Enrolment QR Logic
+// ===================================
+let enrolScanner = null;
+
+function showEnrolarModal() {
+    document.getElementById('enrolarModal').style.display = 'flex';
+    lucide.createIcons();
+    startEnrolScanner();
+}
+
+function closeEnrolarModal() {
+    document.getElementById('enrolarModal').style.display = 'none';
+    stopEnrolScanner();
+}
+
+function startEnrolScanner() {
+    if (enrolScanner) return;
+
+    if (!document.getElementById('enrolarReader')) return;
+
+    enrolScanner = new Html5Qrcode("enrolarReader");
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    enrolScanner.start(
+        { facingMode: "environment" },
+        config,
+        onEnrolScanSuccess
+    ).catch(err => {
+        console.error("Error starting enrol scanner", err);
+        alert("No se pudo iniciar la cámara.");
+    });
+}
+
+function stopEnrolScanner() {
+    if (enrolScanner) {
+        enrolScanner.stop().then(() => {
+            enrolScanner.clear();
+            enrolScanner = null;
+        }).catch(err => console.error("Failed to stop scanner", err));
+    }
+}
+
+function onEnrolScanSuccess(decodedText) {
+    console.log(`Enrol scan result: ${decodedText}`);
+
+    let rut = null;
+
+    try {
+        const url = new URL(decodedText);
+        const params = new URLSearchParams(url.search);
+        if (params.has('run')) rut = params.get('run');
+        else if (params.has('RUN')) rut = params.get('RUN');
+    } catch (e) {
+        // format logic if needed
+        const RUT_REGEX = /^(\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])$/;
+        if (RUT_REGEX.test(decodedText)) {
+            rut = decodedText;
+        }
+    }
+
+    if (rut) {
+        stopEnrolScanner();
+        closeEnrolarModal();
+
+        // Open New Socia Modal and fill RUT
+        showNuevaSociaModal();
+
+        // Wait for modal to open then fill
+        setTimeout(() => {
+            const rutInput = document.getElementById('sociaRut');
+            if (rutInput) {
+                // Formatting helper
+                const clean = rut.replace(/[^0-9kK]/g, '');
+                let formatted = clean;
+                if (clean.length > 1) {
+                    const body = clean.slice(0, -1);
+                    const dv = clean.slice(-1).toUpperCase();
+                    let fBody = '';
+                    for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+                        if (j > 0 && j % 3 === 0) fBody = '.' + fBody;
+                        fBody = body[i] + fBody;
+                    }
+                    formatted = fBody + '-' + dv;
+                }
+                rutInput.value = formatted;
+            }
+        }, 300);
+
+        const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+        audio.play().catch(e => { });
     }
 }

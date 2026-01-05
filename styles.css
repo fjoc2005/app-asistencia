@@ -1874,7 +1874,176 @@ h4,
 }
 
 /* Ensure notification dot stays on top */
+/* ===================================
+   Table Scrolling & Responsive Fixes
+   =================================== */
+.table-container,
+.attendance-matrix-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scrolling on iOS */
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    margin-bottom: var(--spacing-md);
+    background: var(--white);
+}
+
+.data-table,
+.attendance-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+    /* Force scroll on small screens */
+}
+
+/* Sticky Action Column */
+.sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--white);
+    border-right: 1px solid var(--gray-200);
+}
+
+/* ===================================
+   UI Polish & Animations (Juvenile & Institutional)
+   =================================== */
+
+/* Button Animations */
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-success {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    /* Primary Blue Shadow */
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    background: var(--gray-200);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Active State for Buttons */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-danger:active {
+    transform: translateY(0);
+}
+
+/* Unified Card Styles */
+.stat-card,
+.drive-card,
+.meeting-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover,
+.drive-card:hover,
+.meeting-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Table Row Hover */
+.data-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--gray-50);
+}
+
+/* Modal Animation */
+.modal-content {
+    animation: modalSlideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    /* Bouncy entrance */
+}
+
+@keyframes modalSlideIn {
+    0% {
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
 .ai-notification-dot {
     z-index: 10;
     border: 2px solid var(--white);
+}
+
+/* Mode Switcher */
+.mode-switcher {
+    display: flex;
+    background: var(--gray-100);
+    padding: 0.25rem;
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--gray-500);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.mode-btn.active {
+    background: var(--white);
+    color: var(--primary-blue);
+    box-shadow: var(--shadow-sm);
+}
+
+.mode-btn:hover:not(.active) {
+    color: var(--gray-700);
+}
+
+/* Scan Section */
+.scan-section {
+    width: 100%;
+    margin-bottom: var(--spacing-lg);
+}
+
+#reader,
+#enrolarReader {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--spacing-sm);
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--gray-200);
+}
+
+.scan-instruction {
+    text-align: center;
+    color: var(--gray-500);
+    font-size: 0.9rem;
 }

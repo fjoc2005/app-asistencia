@@ -72,17 +72,24 @@ class GoogleDriveIntegration {
             this.accessToken = gapi.auth.getToken().access_token;
             this.saveState();
             this.updateUI();
+            this.startPolling(15000); // Poll every 15 seconds
         } else {
             this.accessToken = null;
             this.clearState();
             this.updateUI();
+            this.stopPolling();
         }
     }
 
     // Sign in to Google
     async signIn() {
         try {
-            await gapi.auth2.getAuthInstance().signIn();
+            const auth = gapi.auth2.getAuthInstance();
+            if (!auth) {
+                console.error("Google Auth not initialized");
+                return;
+            }
+            await auth.signIn();
             // After successful sign-in, create folder structure
             await this.createFolderStructure();
         } catch (error) {
@@ -555,13 +562,72 @@ class GoogleDriveIntegration {
     async loadAllFromDrive() {
         const data = await this.loadDataFile('app_data.json');
         if (data) {
+            // Check timestamps if available ?? for now overwrite local
             if (data.usuarios) localStorage.setItem('usuarios', JSON.stringify(data.usuarios));
             if (data.meetings) localStorage.setItem('meetings', JSON.stringify(data.meetings));
             if (data.attendanceRecords) localStorage.setItem('attendanceRecords', JSON.stringify(data.attendanceRecords));
             if (data.discounts) localStorage.setItem('discounts', JSON.stringify(data.discounts));
+
+            // Trigger UI refresh if in admin
+            if (typeof loadSocias === 'function') loadSocias();
+            if (typeof renderDashboard === 'function') renderDashboard();
+
             return true;
         }
         return false;
+    }
+
+    // Auto-Sync Features
+    startPolling(intervalMs = 30000) {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        this.pollingInterval = setInterval(() => this.checkForUpdates(), intervalMs);
+        console.log('Started polling for Drive updates');
+    }
+
+    stopPolling() {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+    }
+
+    async checkForUpdates() {
+        if (!this.isSignedIn || !this.mainFolderId) return;
+
+        // Simple check: get metadata and compare modifiedTime
+        try {
+            const response = await gapi.client.drive.files.list({
+                q: `name='app_data.json' and '${this.mainFolderId}' in parents and trashed=false`,
+                fields: 'files(id, modifiedTime)'
+            });
+
+            if (response.result.files.length > 0) {
+                const remoteTime = new Date(response.result.files[0].modifiedTime).getTime();
+                const lastSync = localStorage.getItem('lastSyncTime');
+
+                // If remote is newer than last sync + buffer, reload
+                if (!lastSync || remoteTime > parseInt(lastSync)) {
+                    console.log('New data found on Drive, reloading...');
+                    await this.loadAllFromDrive();
+                    localStorage.setItem('lastSyncTime', Date.now().toString());
+
+                    // Notify user
+                    this.showNotification("Datos actualizados desde Drive");
+                }
+            }
+        } catch (error) {
+            console.error('Error checking for updates:', error);
+        }
+    }
+
+    showNotification(msg) {
+        // Minimal toast notification
+        const toast = document.createElement('div');
+        toast.textContent = msg;
+        toast.style.cssText = `
+            position: fixed; bottom: 20px; right: 20px; 
+            background: #10B981; color: white; padding: 10px 20px; 
+            border-radius: 8px; z-index: 9999; animation: fadeInUp 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 }
 

@@ -15,6 +15,9 @@
     <script src="version-control.js"></script>
     <link rel="stylesheet" href="styles.css?v=3.0.5">
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <!-- FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
@@ -68,7 +71,7 @@
                     Cerrar Sesión
                 </button>
                 <div class="branding-footer">
-                    Desarrollado por <strong>Sintramae</strong>
+                    Desarrollado para <strong>Sintramae</strong>
                 </div>
             </div>
         </aside>
@@ -85,6 +88,13 @@
 
             <!-- Dashboard View -->
             <div id="dashboardView" class="view-content active">
+                <div class="dashboard-actions" style="margin-bottom: 2rem; display: flex; justify-content: flex-end;">
+                    <button class="btn-primary" onclick="showEnrolarModal()">
+                        <i data-lucide="qr-code"></i>
+                        Enrolar Nuevo Usuario
+                    </button>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-card animate-scale-in" style="animation-delay: 0.1s; cursor: pointer;"
                         onclick="showView('nominaSocias')">
@@ -413,12 +423,12 @@
                             <table class="data-table" id="tablaReporteMasivo">
                                 <thead>
                                     <tr>
-                                        <th>RUT</th>
-                                        <th>Nombre Completo</th>
-                                        <th>Asistencias</th>
-                                        <th>Atrasos</th>
-                                        <th>Inasistencias</th>
-                                        <th>Estado</th>
+                                        <th><i data-lucide="id-card"></i> RUT</th>
+                                        <th><i data-lucide="user"></i> Nombre Completo</th>
+                                        <th><i data-lucide="check-circle"></i> Asistencias</th>
+                                        <th><i data-lucide="clock"></i> Atrasos</th>
+                                        <th><i data-lucide="x-circle"></i> Inasistencias</th>
+                                        <th><i data-lucide="activity"></i> Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -642,6 +652,32 @@
         </div>
     </div>
 
+    <!-- Modal Enrolar (QR) -->
+    <div id="enrolarModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Enrolar Nuevo Usuario</h3>
+                <button class="btn-close" onclick="closeEnrolarModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="enrolar-body">
+                <p class="instruction-text">Escanea el código QR del carnet de identidad para autocompletar los datos.
+                </p>
+
+                <div id="enrolarReader"
+                    style="width: 100%; min-height: 300px; border-radius: 12px; overflow: hidden; margin-bottom: 1rem;">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEnrolarModal()">Cancelar</button>
+                    <button type="button" class="btn-ghost"
+                        onclick="closeEnrolarModal(); showNuevaSociaModal();">Entrada Manual</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Editar Asistencia -->
     <div id="editarAsistenciaModal" class="modal">
         <div class="modal-content">
@@ -740,6 +776,7 @@
     </div>
 
     <script src="google-drive-integration.js?v=3.0.5"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="ai-assistant.js?v=3.0.5"></script>
     <script src="admin.js?v=3.0.5"></script>
     <script>
