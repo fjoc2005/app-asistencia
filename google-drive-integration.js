@@ -86,15 +86,18 @@ class GoogleDriveIntegration {
         try {
             const auth = gapi.auth2.getAuthInstance();
             if (!auth) {
-                console.error("Google Auth not initialized");
-                return;
+                throw new Error("Google Auth not initialized");
             }
             await auth.signIn();
             // After successful sign-in, create folder structure
             await this.createFolderStructure();
         } catch (error) {
-            console.error('Error signing in:', error);
-            alert('Error al conectar con Google Drive. Por favor intenta nuevamente.');
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.show(error, 'Google Drive Sign In');
+            } else {
+                console.error('Error signing in:', error);
+                alert('Error al conectar con Google Drive. Por favor intenta nuevamente.');
+            }
         }
     }
 

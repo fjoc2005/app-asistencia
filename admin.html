@@ -881,12 +881,30 @@
     </div>
 
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <!-- Lazy Loader Utility -->
+    <script src="js/utils/lazy-loader.js"></script>
+
+    <!-- Error Handler (carga inmediata, es pequeño y crítico) -->
+    <script src="js/services/error-handler.js"></script>
+
+    <!-- Admin Core (carga inmediata) -->
     <script>
         const ts = new Date().getTime();
-        document.write('<script src="google-drive-integration.js?v=' + ts + '"><\/script>');
-        document.write('<script src="ai-assistant.js?v=' + ts + '"><\/script>');
         document.write('<script src="admin.js?v=' + ts + '"><\/script>');
     </script>
+
+    <!-- Lazy Loading de módulos pesados -->
+    <script>
+        // Pre-cargar módulos en segundo plano cuando el navegador esté idle
+        if (typeof lazyLoader !== 'undefined') {
+            lazyLoader.preload([
+                { src: 'google-drive-integration.js', id: 'drive-integration' },
+                { src: 'ai-assistant.js', id: 'ai-assistant' }
+            ]);
+        }
+    </script>
+
     <script>
         lucide.createIcons();
     </script>
