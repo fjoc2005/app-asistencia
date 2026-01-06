@@ -65,7 +65,7 @@ function getAsistencias() {
     return asistencias ? JSON.parse(asistencias) : [];
 }
 
-function saveAsistencia(rut, nombreCompleto, photoURL = null) {
+function saveAsistencia(rut, nombreCompleto, photoURL = null, meetingId = null) {
     const asistencias = getAsistencias();
     const now = new Date();
 
@@ -75,13 +75,37 @@ function saveAsistencia(rut, nombreCompleto, photoURL = null) {
         rut: rut,
         nombreCompleto: nombreCompleto,
         photoURL: photoURL,
+        meetingId: meetingId, // Link to meeting if exists
         timestamp: now.toISOString()
     };
 
     asistencias.push(asistencia);
     localStorage.setItem('asistencias', JSON.stringify(asistencias));
 
+    // If linked to meeting, update meeting attendance matrix
+    if (meetingId) {
+        updateMeetingAttendance(meetingId, rut, 'Asistió', asistencia.hora);
+    }
+
     return asistencia;
+}
+
+// Update meeting attendance matrix
+function updateMeetingAttendance(meetingId, sociaRut, estado, hora) {
+    const meetings = JSON.parse(localStorage.getItem('meetings') || '[]');
+    const meeting = meetings.find(m => m.id === meetingId);
+
+    if (meeting) {
+        if (!meeting.asistencias) {
+            meeting.asistencias = {};
+        }
+        meeting.asistencias[sociaRut] = {
+            estado: estado,
+            hora: hora,
+            justificacion: null
+        };
+        localStorage.setItem('meetings', JSON.stringify(meetings));
+    }
 }
 
 function findUsuarioByRUT(rut) {
@@ -152,7 +176,8 @@ function startQRCamera() {
     html5QrcodeScanner.start(
         { facingMode: "environment" },
         config,
-        onScanSuccess
+        onScanSuccess,
+        (errorMessage) => { /* Ignore continuous scan errors */ }
     ).catch(err => {
         console.error("Error starting QR scanner", err);
         document.getElementById('reader').innerHTML =
