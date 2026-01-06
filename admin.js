@@ -1108,6 +1108,7 @@ function validateRUT(rut) {
 function toggleAIChat() {
     const panel = document.getElementById('aiChatPanel');
     const button = document.getElementById('aiChatButton');
+    const bubble = document.getElementById('aiReminderBubble'); // Get bubble ref
 
     if (panel.classList.contains('open')) {
         panel.classList.remove('open');
@@ -1115,11 +1116,23 @@ function toggleAIChat() {
     } else {
         panel.classList.add('open');
         button.classList.add('active');
+        // Close bubble when chat opens
+        if (bubble) bubble.style.display = 'none';
+
         // Focus input
         setTimeout(() => {
             document.getElementById('aiChatInput').focus();
         }, 300);
         lucide.createIcons();
+    }
+}
+
+function closeAIBubble() {
+    const bubble = document.getElementById('aiReminderBubble');
+    if (bubble) {
+        bubble.style.display = 'none';
+        // Optional: Save preference to localStorage so it doesn't pop up again this session
+        sessionStorage.setItem('aiBubbleClosed', 'true');
     }
 }
 
@@ -1455,7 +1468,7 @@ window.showView = function (viewId) {
 // Document Generation Logic
 // ===================================
 function downloadCSVTemplate() {
-    const csvContent = "RUT,Nombre Completo,Email,Estado\n12.345.678-9,Maria Gonzalez,maria@email.com,Activo\n9.876.543-2,Juan Perez,juan@email.com,Activo";
+    const csvContent = "RUT,Nombres,Apellido Paterno,Apellido Materno\n12.345.678-9,Maria,Gonzalez,Perez\n9.876.543-2,Juan,Perez,Lopez";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -1466,6 +1479,25 @@ function downloadCSVTemplate() {
     document.body.removeChild(link);
 }
 
+// Manual Save for Socias
+function manualSaveSocias() {
+    if (!confirm('¿Desea guardar los cambios realizados en la nómina?')) return;
+
+    // In a real app with backend, this would POST data. 
+    // Here we ensure localStorage is sync (which happens automatically on array mod, but good for user feedback)
+    localStorage.setItem('usuarios', JSON.stringify(getSocias()));
+
+    if (driveIntegration) {
+        driveIntegration.syncData().then(() => {
+            alert('Información guardada y sincronizada correctamente.');
+        }).catch(err => {
+            console.error(err);
+            alert('Información guardada localmente. Error al sincronizar con Drive.');
+        });
+    } else {
+        alert('Información guardada localmente.');
+    }
+}
 function searchSociaForCert(query) {
     const resultsDiv = document.getElementById('certSociaResults');
     if (!query || query.length < 2) {
@@ -1635,7 +1667,7 @@ document.getElementById('csvFile').addEventListener('change', function (e) {
         for (let i = startIndex; i < rows.length; i++) {
             const cols = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, '')); // Remove quotes
 
-            // Expected format: RUT, Nombre, Email, Estado
+            // Expected format: RUT, Nombres, ApellidoPaterno, ApellidoMaterno
             if (cols.length >= 2) {
                 const rut = cleanRUT(cols[0]);
                 if (validateRUT(rut)) {
@@ -1645,8 +1677,11 @@ document.getElementById('csvFile').addEventListener('change', function (e) {
                     const newSocia = {
                         rut: formatRUT(rut),
                         nombres: cols[1] || 'Socia Importada',
-                        email: cols[2] || '',
-                        estado: cols[3] || 'Activo',
+                        // In case columns are missing, fallback gracefully
+                        apellidoPaterno: cols[2] || '',
+                        apellidoMaterno: cols[3] || '',
+                        email: '', // Default empty as per request
+                        estado: 'Activo', // Default active
                         fechaIngreso: new Date().toISOString().split('T')[0]
                     };
 

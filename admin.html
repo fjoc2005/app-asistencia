@@ -230,6 +230,11 @@
                             <i data-lucide="user-plus"></i>
                             Nueva Socia
                         </button>
+                        <button class="btn-success" onclick="manualSaveSocias()"
+                            style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                            <i data-lucide="save"></i>
+                            Guardar Info
+                        </button>
                     </div>
                 </div>
 
@@ -810,8 +815,18 @@
     </div>
 
     <!-- AI Assistant Reminder Bubble -->
-    <div id="ai-reminder-bubble" class="ai-reminder-bubble" onclick="toggleAIChat()">
-        ¡Hola! 👋 Soy Teresita. ¿Sabías que puedo ayudarte a crear una reunión rápidamente?
+    <div class="ai-reminder-bubble" id="aiReminderBubble" style="display: none;">
+        <button class="ai-bubble-close" onclick="closeAIBubble()">
+            <i data-lucide="x"></i>
+        </button>
+        <div class="ai-bubble-content" onclick="toggleAIChat()">
+            <img src="https://ui-avatars.com/api/?name=Asistente+AI&background=random&gender=female" alt="AI Avatar"
+                class="ai-avatar-small">
+            <div class="ai-text-content">
+                <p class="ai-bubble-title">¡Hola!</p>
+                <p class="ai-bubble-message">¿Necesitas ayuda con los reportes?</p>
+            </div>
+        </div>
     </div>
 
     <!-- AI Assistant Chat -->
