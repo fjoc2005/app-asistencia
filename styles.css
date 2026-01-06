@@ -1613,6 +1613,17 @@ h4,
         border-radius: 8px;
     }
 
+    .nav-item.active {
+        background-color: var(--primary-light);
+        /* Light blue background */
+    }
+
+    .nav-item.active i,
+    .nav-item.active .nav-text {
+        color: var(--primary-blue);
+        /* Blue icon and text */
+    }
+
     .nav-item i {
         margin-right: 0;
         margin-bottom: 4px;

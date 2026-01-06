@@ -1403,28 +1403,214 @@ function exportReporteMasivo() {
     document.body.removeChild(link);
 }
 
+// Mobile: Auto collapse sidebar on selection
+if (window.innerWidth <= 768) {
+    document.querySelector('.sidebar').classList.add('collapsed');
+}
+
 // Hook into showView to render reports
 const originalShowView = window.showView;
 window.showView = function (viewId) {
     if (viewId === 'reportes') {
         renderReportesView();
     }
-    // Call original logic (a bit tricky replacing global functions, better to inline logic if possible or copy original)
-    // Re-implementing simplified showView logic here for safety as I can't easily wrap strictly 
 
+    // Hide all views
     document.querySelectorAll('.view-content').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-    const selectedView = document.getElementById(viewId + 'View') || document.getElementById('view-' + viewId);
-    if (selectedView) selectedView.style.display = 'block';
+    // Handle viewId that might be hash format
+    const targetId = viewId.replace('#', '');
+    const selectedView = document.getElementById(targetId + 'View') || document.getElementById('view-' + targetId);
 
-    const activeNav = document.querySelector(`a[href="#${viewId === 'controlAsistencia' ? 'control-asistencia' : viewId === 'nominaSocias' ? 'nomina-socias' : viewId}"]`);
+    if (selectedView) {
+        selectedView.style.display = 'block';
+        lucide.createIcons(); // Re-render icons for new view
+    }
+
+    // Active nav state
+    const activeNav = document.querySelector(`a[href="#${targetId === 'controlAsistencia' ? 'control-asistencia' : targetId === 'nominaSocias' ? 'nomina-socias' : targetId === 'generarDocumentos' ? 'generar-documentos' : targetId}"]`);
     if (activeNav) activeNav.classList.add('active');
+
+    // Title update
+    const titles = {
+        dashboard: 'Dashboard',
+        controlAsistencia: 'Control de Asistencia',
+        nominaSocias: 'Nómina de Socias',
+        descuentos: 'Gestión de Descuentos',
+        vinculacion: 'Vinculación de Cuentas',
+        reportes: 'Reportes y Estadísticas',
+        generarDocumentos: 'Generación de Documentos'
+    };
+    const titleEl = document.getElementById('viewTitle');
+    if (titleEl && titles[targetId]) titleEl.textContent = titles[targetId];
 
     // Mobile: Auto collapse sidebar on selection
     if (window.innerWidth <= 768) {
         document.querySelector('.sidebar').classList.add('collapsed');
     }
+}
+
+// ===================================
+// Document Generation Logic
+// ===================================
+function downloadCSVTemplate() {
+    const csvContent = "RUT,Nombre Completo,Email,Estado\n12.345.678-9,Maria Gonzalez,maria@email.com,Activo\n9.876.543-2,Juan Perez,juan@email.com,Activo";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "plantilla_socias.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function searchSociaForCert(query) {
+    const resultsDiv = document.getElementById('certSociaResults');
+    if (!query || query.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+
+    const socias = getSocias();
+    const filtered = socias.filter(s => s.rut.includes(query) || (s.nombres + ' ' + s.apellidoPaterno).toLowerCase().includes(query.toLowerCase()));
+
+    if (filtered.length > 0) {
+        resultsDiv.innerHTML = filtered.map(s => `
+            <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" onclick="selectSociaForCert('${s.rut}', '${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno || ''}')">
+                <strong>${s.nombres} ${s.apellidoPaterno}</strong><br>
+                <small>${s.rut}</small>
+            </div>
+        `).join('');
+        resultsDiv.style.display = 'block';
+    } else {
+        resultsDiv.style.display = 'none';
+    }
+}
+
+function selectSociaForCert(rut, nombre) {
+    document.getElementById('certSociaRut').value = rut;
+    document.getElementById('certSelectedSocia').value = rut;
+    document.getElementById('certSelectedName').textContent = nombre;
+    document.getElementById('certSociaResults').style.display = 'none';
+}
+
+function generateCertificate() {
+    const rut = document.getElementById('certSelectedSocia').value;
+    const nombre = document.getElementById('certSelectedName').textContent;
+
+    if (!rut) {
+        alert('Por favor selecciona una socia primero.');
+        return;
+    }
+
+    const docWindow = window.open('', '_blank');
+    docWindow.document.write(`
+        <html>
+        <head>
+            <title>Certificado de Afiliación</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+                .header { text-align: center; margin-bottom: 50px; }
+                .title { font-size: 24px; font-weight: bold; text-decoration: underline; margin-bottom: 20px; }
+                .content { text-align: justify; font-size: 14pt; margin-bottom: 60px; }
+                .footer { margin-top: 100px; display: flex; justify-content: space-between; padding: 0 50px; }
+                .signature { text-align: center; border-top: 1px solid black; width: 200px; padding-top: 10px; }
+                .date { text-align: right; margin-top: 40px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>SINDICATO SINTRAMAE</h2>
+                <p>Certificado de Afiliación</p>
+            </div>
+            
+            <div class="content">
+                <p>Se certifica que <strong>${nombre}</strong>, RUT <strong>${rut}</strong>, es socia activa del Sindicato SINTRAMAE a la fecha.</p>
+                <p>El presente certificado se expide a solicitud de la interesada para los fines que estime conveniente.</p>
+            </div>
+            
+            <div class="date">
+                Valdivia, ${new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
+
+            <div class="footer">
+                <div class="signature">
+                    Firma Presidenta
+                </div>
+                <div class="signature">
+                    Timbre Sindicato
+                </div>
+            </div>
+            
+            <script>window.print();</script>
+        </body>
+        </html>
+    `);
+    docWindow.document.close();
+}
+
+function generateConvenio() {
+    const nombre = document.getElementById('convSocia').value;
+    const comercio = document.getElementById('convComercio').value;
+    const monto = document.getElementById('convMonto').value;
+    const cuotas = document.getElementById('convCuotas').value;
+
+    if (!nombre || !comercio || !monto || !cuotas) {
+        alert('Por favor completa todos los campos.');
+        return;
+    }
+
+    const docWindow = window.open('', '_blank');
+    docWindow.document.write(`
+        <html>
+        <head>
+            <title>Documento de Convenio</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.5; }
+                .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                .title { font-size: 20px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; }
+                .content { margin-bottom: 40px; font-size: 12pt; }
+                .details-box { border: 1px solid #ccc; padding: 20px; margin: 20px 0; background: #f9f9f9; }
+                .signatures { margin-top: 80px; display: flex; justify-content: space-between; }
+                .sig-block { text-align: center; width: 200px; border-top: 1px solid black; padding-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>SINTRAMAE</h2>
+                <p>Convenio de Descuento por Planilla</p>
+            </div>
+
+            <div class="content">
+                <p>Yo, <strong>${nombre}</strong>, autorizo el descuento de mi remuneración mensual según el siguiente detalle:</p>
+                
+                <div class="details-box">
+                    <p><strong>Comercio / Entidad:</strong> ${comercio}</p>
+                    <p><strong>Monto Total:</strong> $${parseInt(monto).toLocaleString('es-CL')}</p>
+                    <p><strong>Número de Cuotas:</strong> ${cuotas}</p>
+                    <p><strong>Valor Cuota Aprox:</strong> $${Math.round(monto / cuotas).toLocaleString('es-CL')}</p>
+                </div>
+
+                <p>Este documento sirve como respaldo para el descuento mensual correspondiente.</p>
+            </div>
+
+            <div class="signatures">
+                <div class="sig-block">
+                    Firma Socia
+                    <br><small>${nombre}</small>
+                </div>
+                <div class="sig-block">
+                    V°B° Tesorería SINTRAMAE
+                </div>
+            </div>
+            
+            <script>window.print();</script>
+        </body>
+        </html>
+    `);
+    docWindow.document.close();
 }
 
 // ===================================

@@ -63,6 +63,10 @@
                     <i data-lucide="cloud"></i>
                     <span class="nav-text">Vinculación de Cuentas</span>
                 </a>
+                <a href="#generar-documentos" class="nav-item" onclick="showView('generarDocumentos')">
+                    <i data-lucide="file-check"></i>
+                    <span class="nav-text">Documentos</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -450,6 +454,91 @@
                     <div id="reporteIndividualResult" class="reporte-individual-card" style="display: none;">
                         <!-- Populated by JS -->
                     </div>
+                </div>
+            </div>
+            <!-- Generar Documentos View -->
+            <div id="generarDocumentosView" class="view-content">
+                <div class="view-header">
+                    <h2>Generación de Documentos</h2>
+                    <p class="subtitle">Descarga de plantillas, certificados y convenios</p>
+                </div>
+
+                <div class="documents-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+
+                    <!-- Card 1: CSV Template -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="file-spreadsheet" style="color: #10B981;"></i> Plantilla Socias
+                        </h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1.5rem;">Descarga el formato CSV correcto para
+                            importar socias masivamente.</p>
+                        <button class="btn-primary" style="width: 100%;" onclick="downloadCSVTemplate()">
+                            <i data-lucide="download"></i> Descargar CSV
+                        </button>
+                    </div>
+
+                    <!-- Card 2: Certificate -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="award" style="color: #F59E0B;"></i> Certificado de Socia
+                        </h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1rem;">Genera un certificado de afiliación para
+                            una socia.</p>
+
+                        <div class="form-group">
+                            <label>Seleccionar Socia</label>
+                            <div class="input-group">
+                                <input type="text" id="certSociaRut" placeholder="Buscar por RUT..."
+                                    oninput="searchSociaForCert(this.value)">
+                                <button class="btn-secondary"><i data-lucide="search"></i></button>
+                            </div>
+                            <div id="certSociaResults" class="search-results"
+                                style="display:none; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; position: absolute; background: white; width: 100%; z-index: 10;">
+                            </div>
+                            <input type="hidden" id="certSelectedSocia">
+                            <p id="certSelectedName"
+                                style="font-weight: bold; margin-top: 0.5rem; color: var(--primary-blue);"></p>
+                        </div>
+
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;"
+                            onclick="generateCertificate()">
+                            <i data-lucide="printer"></i> Generar Certificado
+                        </button>
+                    </div>
+
+                    <!-- Card 3: Agreement -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="file-signature" style="color: #6366F1;"></i> Documento de Convenio
+                        </h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1rem;">Crea un documento de compromiso de pago.
+                        </p>
+
+                        <div class="form-group">
+                            <label>Nombre Socia</label>
+                            <input type="text" id="convSocia" placeholder="Ej: María González">
+                        </div>
+                        <div class="form-group">
+                            <label>Comercio / Entidad</label>
+                            <input type="text" id="convComercio" placeholder="Ej: Farmacia Cruz Verde">
+                        </div>
+                        <div class="form-group" style="display: flex; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <label>Monto</label>
+                                <input type="number" id="convMonto" placeholder="50000">
+                            </div>
+                            <div style="flex: 1;">
+                                <label>Cuotas</label>
+                                <input type="number" id="convCuotas" placeholder="3">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="generateConvenio()">
+                            <i data-lucide="file-text"></i> Generar Convenio
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </main>
