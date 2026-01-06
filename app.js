@@ -99,10 +99,10 @@ let html5QrcodeScanner = null;
 document.addEventListener('DOMContentLoaded', () => {
     // Only init if on registro page
     if (!document.getElementById('registroForm')) return;
-    
+
     // Initialize QR Scanner
     initQRScanner();
-    
+
     // Setup manual form listeners
     setupFormListeners();
 
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Mode Switching
-window.switchMode = function(mode) {
+window.switchMode = function (mode) {
     const scanSection = document.getElementById('scanSection');
     const formSection = document.getElementById('registroForm');
     const btnScan = document.getElementById('btnModeScan');
@@ -146,16 +146,16 @@ function startQRCamera() {
     if (html5QrcodeScanner) return; // Already running
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
+
     html5QrcodeScanner = new Html5Qrcode("reader");
-    
+
     html5QrcodeScanner.start(
-        { facingMode: "environment" }, 
+        { facingMode: "environment" },
         config,
         onScanSuccess
     ).catch(err => {
         console.error("Error starting QR scanner", err);
-        document.getElementById('reader').innerHTML = 
+        document.getElementById('reader').innerHTML =
             '<p class="error-msg">No se pudo iniciar la cámara. Use el modo manual.</p>';
     });
 }
@@ -182,7 +182,7 @@ function onScanSuccess(decodedText, decodedResult) {
     try {
         const url = new URL(decodedText);
         const params = new URLSearchParams(url.search);
-        
+
         if (params.has('run')) {
             rut = params.get('run');
         } else if (params.has('RUN')) {
@@ -199,21 +199,21 @@ function onScanSuccess(decodedText, decodedResult) {
     if (rut) {
         // Stop scanning
         stopQRCamera();
-        
+
         // Fill form and validate
         const rutInput = document.getElementById('rut');
         rutInput.value = formatRUT(rut);
-        
+
         // Switch to manual view to show user the result
         switchMode('manual');
-        
+
         // Trigger validation logic
         const event = new Event('blur');
         rutInput.dispatchEvent(event);
-        
+
         playSuccessSound();
     } else {
-       console.log("No valid RUT found in QR");
+        console.log("No valid RUT found in QR");
     }
 }
 
@@ -259,7 +259,7 @@ function setupFormListeners() {
             const currentValue = rutInput.value;
             const newValue = currentValue.substring(0, startPos) + 'k' + currentValue.substring(endPos);
             rutInput.value = newValue;
-            
+
             const event = new Event('input', { bubbles: true });
             rutInput.dispatchEvent(event);
             rutInput.focus();
@@ -274,13 +274,22 @@ function setupFormListeners() {
             return;
         }
         form.style.display = 'none';
-        startPhotoCapture();
+
+        // Direct attendance confirmation - No Photo
+        const nombreCompleto = `${currentUser.nombres || currentUser.nombre || ''} ${currentUser.apellidoPaterno || ''} ${currentUser.apellidoMaterno || ''}`.trim();
+        const asistencia = saveAsistencia(currentUser.rut, nombreCompleto, null);
+
+        if (window.driveIntegration) {
+            window.driveIntegration.syncData().catch(console.error);
+        }
+
+        showSuccessAndRedirect(nombreCompleto, asistencia.hora);
     });
 }
 
 function validateAndShowUser(rut) {
     const btnConfirmar = document.getElementById('btnConfirmar');
-    
+
     if (!rut) {
         hideError();
         hideUserInfo();
@@ -351,120 +360,7 @@ function hideUserInfo() {
     }
 }
 
-// Photo Capture Functions
-async function startPhotoCapture() {
-    const photoCaptureSection = document.getElementById('photoCaptureSection');
-    const video = document.getElementById('videoElement');
-    const btnCapturePhoto = document.getElementById('btnCapturePhoto');
 
-    // Hide other sections
-    document.getElementById('scanSection').style.display = 'none';
-    document.querySelector('.mode-switcher').style.display = 'none';
-    
-    photoCaptureSection.style.display = 'block';
-
-    try {
-        stopQRCamera(); // Ensure QR camera is off
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: 'user'
-            }
-        });
-
-        video.srcObject = stream;
-        videoStream = stream;
-
-        video.onloadedmetadata = () => {
-            video.play();
-        };
-
-        lucide.createIcons();
-
-    } catch (error) {
-        console.error('Error accessing camera:', error);
-        alert('No se pudo acceder a la cámara. Verifica los permisos.');
-        resetToHome();
-    }
-
-    btnCapturePhoto.onclick = capturePhoto;
-}
-
-async function capturePhoto() {
-    const video = document.getElementById('videoElement');
-    const canvas = document.getElementById('photoCanvas');
-    const btnCapturePhoto = document.getElementById('btnCapturePhoto');
-
-    btnCapturePhoto.disabled = true;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    canvas.toBlob(async (blob) => {
-        stopCamera();
-        await uploadPhoto(blob);
-    }, 'image/jpeg', 0.9);
-}
-
-function stopCamera() {
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-}
-
-async function uploadPhoto(photoBlob) {
-    const uploadProgress = document.getElementById('uploadProgress');
-    const progressFill = document.getElementById('progressFill');
-    const uploadStatus = document.getElementById('uploadStatus');
-
-    uploadProgress.style.display = 'block';
-
-    try {
-        progressFill.style.width = '30%';
-        uploadStatus.textContent = 'Subiendo fotografía a Drive...';
-
-        // Check if drive integration is available
-        let result = { success: false };
-        if (typeof uploadPhotoToDrive === 'function') {
-             result = await uploadPhotoToDrive(photoBlob, currentUser.rut, (progress) => {
-                progressFill.style.width = progress + '%';
-            });
-        }
-
-        let photoURL = null;
-        const nombreCompleto = `${currentUser.nombres || currentUser.nombre || ''} ${currentUser.apellidoPaterno || ''} ${currentUser.apellidoMaterno || ''}`.trim();
-
-        if (result.success) {
-            uploadStatus.textContent = 'Fotografía subida exitosamente';
-            photoURL = result.fileId ? `https://drive.google.com/file/d/${result.fileId}/view` : 'local';
-        } else {
-            uploadStatus.textContent = 'Guardando fotografía localmente...';
-            // Fallback would fail if savePhotoLocally is not defined, simplified here
-            photoURL = 'local';
-        }
-
-        const asistencia = saveAsistencia(currentUser.rut, nombreCompleto, photoURL);
-        
-        // Trigger sync if available
-        if (window.driveIntegration) {
-             window.driveIntegration.syncData();
-        }
-
-        showSuccessAndRedirect(nombreCompleto, asistencia.hora);
-
-    } catch (error) {
-        console.error('Error uploading photo:', error);
-        const nombreCompleto = `${currentUser.nombres || currentUser.nombre || ''} ${currentUser.apellidoPaterno || ''} ${currentUser.apellidoMaterno || ''}`.trim();
-        const asistencia = saveAsistencia(currentUser.rut, nombreCompleto, 'local');
-        showSuccessAndRedirect(nombreCompleto, asistencia.hora);
-    }
-}
 
 function showSuccessAndRedirect(nombre, hora) {
     const modal = document.getElementById('successModal');

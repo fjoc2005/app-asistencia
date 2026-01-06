@@ -819,13 +819,19 @@
         <button class="ai-bubble-close" onclick="closeAIBubble()">
             <i data-lucide="x"></i>
         </button>
-        <div class="ai-bubble-content" onclick="toggleAIChat()">
-            <img src="https://ui-avatars.com/api/?name=Asistente+AI&background=random&gender=female" alt="AI Avatar"
-                class="ai-avatar-small">
-            <div class="ai-text-content">
-                <p class="ai-bubble-title">¡Hola!</p>
-                <p class="ai-bubble-message">¿Necesitas ayuda con los reportes?</p>
+        <div class="ai-bubble-content">
+            <div onclick="toggleAIChat()" style="display:flex; align-items:center; gap:10px;">
+                <img src="https://ui-avatars.com/api/?name=Asistente+AI&background=random&gender=female" alt="AI Avatar"
+                    class="ai-avatar-small">
+                <div class="ai-text-content">
+                    <p class="ai-bubble-title">¡Hola!</p>
+                    <p class="ai-bubble-message">¿Necesitas ayuda?</p>
+                </div>
             </div>
+            <button onclick="showEnrolarModal()" class="btn-xs btn-primary"
+                style="margin-left: 10px; padding: 4px 8px; font-size: 0.7rem;">
+                <i data-lucide="qr-code" style="width: 14px; height: 14px;"></i> Enrolar
+            </button>
         </div>
     </div>
 

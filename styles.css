@@ -1,36 +1,45 @@
 ﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap');
 
 :root {
-    /* Section Colors */
-    --clr-dashboard: #3b82f6;
-    --clr-asistencia: #10b981;
-    --clr-socias: #6366f1;
-    --clr-descuentos: #f59e0b;
-    --clr-reportes: #f43f5e;
-    --clr-vinculacion: #8b5cf6;
+    /* Section Colors - Feminine Palette */
+    --clr-dashboard: #8b5cf6;
+    /* Violet */
+    --clr-asistencia: #ec4899;
+    /* Pink/Rose */
+    --clr-socias: #d946ef;
+    /* Fuchsia */
+    --clr-descuentos: #f472b6;
+    /* Light Pink */
+    --clr-reportes: #fb7185;
+    /* Rose */
+    --clr-vinculacion: #a78bfa;
+    /* Soft Purple */
 
     /* Base Colors */
     --primary: var(--clr-dashboard);
-    --bg-main: #f8fafc;
+    --bg-main: #fdf2f8;
+    /* Very light pink background */
     --white: #ffffff;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    /* More opaque */
+    --glass-border: rgba(255, 255, 255, 0.6);
 
     /* Typography */
     --font-main: 'Inter', sans-serif;
     --font-heading: 'Montserrat', sans-serif;
 
-    /* Grays */
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #cbd5e1;
-    --gray-400: #94a3b8;
-    --gray-500: #64748b;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1e293b;
-    --gray-900: #0f172a;
+    /* Grays - Warmer tone */
+    --gray-50: #fdf4ff;
+    --gray-100: #fae8ff;
+    --gray-200: #f5d0fe;
+    --gray-300: #e879f9;
+    /* Accent for borders */
+    --gray-400: #d946ef;
+    --gray-500: #c026d3;
+    --gray-600: #a21caf;
+    --gray-700: #86198f;
+    --gray-800: #701a75;
+    --gray-900: #4a044e;
 
     /* Spacing & Radius */
     --spacing-xs: 0.5rem;
@@ -40,15 +49,22 @@
     --spacing-xl: 2rem;
 
     --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
+    --radius-md: 16px;
+    /* Softer curves */
+    --radius-lg: 24px;
+    --radius-xl: 32px;
     --radius-full: 9999px;
 
     /* Enhanced Colors */
-    --primary-blue: #3b82f6;
-    --primary-green: #10b981;
-    --grad-primary: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    --primary-blue: #8b5cf6;
+    /* Replaced Blue with Violet */
+    --primary-green: #ec4899;
+    /* Replaced Green with Rose */
+    --primary-light: #f3e8ff;
+    /* Light purple for active states */
+    --grad-primary: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    /* Purple to Pink */
+    --grad-bg: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
 
     /* Transitions */
     --trans-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -56,12 +72,12 @@
     --transition-fast: 0.2s ease;
     --transition-base: 0.3s ease;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    /* Shadows - Softer/Colored */
+    --shadow-sm: 0 1px 2px 0 rgba(162, 28, 175, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(162, 28, 175, 0.1), 0 2px 4px -1px rgba(162, 28, 175, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(162, 28, 175, 0.1), 0 4px 6px -2px rgba(162, 28, 175, 0.05);
+    --shadow-soft: 0 10px 25px -5px rgba(162, 28, 175, 0.05), 0 8px 10px -6px rgba(162, 28, 175, 0.05);
+    --shadow-glass: 0 8px 32px 0 rgba(162, 28, 175, 0.15);
 }
 
 /* Background Decorations */
@@ -73,14 +89,14 @@
     height: 100%;
     z-index: -1;
     overflow: hidden;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: var(--grad-bg);
 }
 
 .circle {
     position: absolute;
     border-radius: 50%;
     filter: blur(80px);
-    opacity: 0.4;
+    opacity: 0.3;
     animation: pulse 10s infinite alternate;
 }
 
@@ -89,7 +105,8 @@
     right: -10%;
     width: 400px;
     height: 400px;
-    background: var(--clr-dashboard);
+    background: #d946ef;
+    /* Fuchsia */
 }
 
 .circle-2 {
@@ -97,7 +114,9 @@
     left: -10%;
     width: 350px;
     height: 350px;
-    background: var(--clr-socias);
+    background: #8b5cf6;
+    /* Violet */
+
 }
 
 .circle-3 {
@@ -118,6 +137,20 @@
         transform: scale(1.1);
         opacity: 0.6;
     }
+}
+
+/* Global Button Reset (Fix Windows 98 Look) */
+button {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--trans-fast);
+}
+
+button:focus {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 2px;
 }
 
 /* Base Styles */

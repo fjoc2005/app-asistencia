@@ -1467,8 +1467,12 @@ window.showView = function (viewId) {
 // ===================================
 // Document Generation Logic
 // ===================================
+// ===================================
+// Document Generation Logic
+// ===================================
 function downloadCSVTemplate() {
-    const csvContent = "RUT,Nombres,Apellido Paterno,Apellido Materno\n12.345.678-9,Maria,Gonzalez,Perez\n9.876.543-2,Juan,Perez,Lopez";
+    // Add BOM for Excel compatibility (\uFEFF)
+    const csvContent = "\uFEFFRUT,Nombres,Apellido Paterno,Apellido Materno\n12.345.678-9,Maria,Gonzalez,Perez\n9.876.543-2,Juan,Perez,Lopez";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -1478,6 +1482,29 @@ function downloadCSVTemplate() {
     link.click();
     document.body.removeChild(link);
 }
+
+// Global Nav Listener to prevent jumps
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.nav-item').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault(); // Stop jump to top
+            const href = link.getAttribute('href');
+            // Extract view ID if it's a hash
+            if (href && href.startsWith('#')) {
+                // If onclick is present it handles the view, we just stop the default anchor behavior
+            }
+
+            // Mobile sidebar collapse logic is already in showView, but we ensure it here too
+            if (window.innerWidth <= 768) {
+                // Wait for view change then collapse
+                setTimeout(() => {
+                    document.querySelector('.sidebar').classList.add('collapsed');
+                }, 100);
+            }
+        });
+    });
+});
+
 
 // Manual Save for Socias
 function manualSaveSocias() {
