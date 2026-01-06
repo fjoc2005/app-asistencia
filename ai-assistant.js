@@ -550,15 +550,22 @@ class AIAssistant {
     }
 
     checkReminders() {
-        const bubble = document.getElementById('ai-reminder-bubble');
-        if (!bubble) return;
+        // Target the message element specifically to preserve Avatar/Close button
+        const messageEl = document.querySelector('#ai-reminder-bubble .ai-bubble-message');
+        const titleEl = document.querySelector('#ai-reminder-bubble .ai-bubble-title');
+
+        if (!messageEl) return;
+
         const mtgs = getMeetings();
         const today = new Date().toISOString().split('T')[0];
         const mtgToday = mtgs.find(m => m.fecha === today);
+
+        if (titleEl) titleEl.textContent = '¡Hola!';
+
         if (mtgToday) {
-            bubble.innerHTML = `👋 ¡Hola! Tienes la reunión **"${mtgToday.nombre}"** hoy.`;
+            messageEl.innerHTML = `Tienes la reunión <strong>"${mtgToday.nombre}"</strong> hoy.`;
         } else {
-            bubble.innerHTML = `👋 ¡Hola! Soy Teresita. ¿Cómo puedo ayudarte hoy?`;
+            messageEl.textContent = '¿Cómo puedo ayudarte hoy?';
         }
     }
 }
