@@ -283,7 +283,7 @@ function setupFormListeners() {
             window.driveIntegration.syncData().catch(console.error);
         }
 
-        showSuccessAndRedirect(nombreCompleto, asistencia.hora);
+        showResultModal('success', 'Socia registrada con éxito', `${nombreCompleto}, tu asistencia ha sido registrada a las ${asistencia.hora}`);
     });
 }
 
@@ -306,7 +306,7 @@ function validateAndShowUser(rut) {
     const usuario = findUsuarioByRUT(rut);
 
     if (!usuario) {
-        showError('Usuario no encontrado. Contacta al administrador.');
+        showResultModal('error', 'Socia no registrada', 'El RUT ingresado no corresponde a una socia activa en el sistema.', false);
         hideUserInfo();
         btnConfirmar.disabled = true;
         return;
@@ -362,19 +362,49 @@ function hideUserInfo() {
 
 
 
-function showSuccessAndRedirect(nombre, hora) {
-    const modal = document.getElementById('successModal');
-    const message = document.getElementById('successMessage');
+function showResultModal(type, title, messageText, redirect = true) {
+    const modal = document.getElementById('resultModal');
+    const resultIcon = document.getElementById('resultIcon');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultMessage = document.getElementById('resultMessage');
+    const redirectMsg = document.getElementById('redirectMessage');
+    const btnClose = document.getElementById('btnCloseModal');
 
-    message.textContent = `${nombre}, tu asistencia ha sido registrada a las ${hora}`;
+    resultTitle.textContent = title;
+    resultMessage.textContent = messageText;
+
+    // Reset classes
+    const iconContainer = document.getElementById('resultIconContainer');
+    iconContainer.className = '';
+
+    if (type === 'success') {
+        iconContainer.classList.add('success-icon');
+        resultIcon.setAttribute('data-lucide', 'check-circle');
+        redirectMsg.style.display = 'block';
+        btnClose.style.display = 'none';
+
+        if (redirect) {
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
+        }
+        createConfetti();
+    } else {
+        iconContainer.classList.add('error-icon'); // Will need CSS for this
+        resultIcon.setAttribute('data-lucide', 'x-circle');
+        redirectMsg.style.display = 'none';
+        btnClose.style.display = 'block'; // Show close button for errors
+
+        // Ensure error styling is applied (can add inline or class)
+        iconContainer.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+    }
+
     modal.style.display = 'flex';
-
     lucide.createIcons();
-    createConfetti();
+}
 
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 3000);
+function closeResultModal() {
+    document.getElementById('resultModal').style.display = 'none';
 }
 
 function resetToHome() {

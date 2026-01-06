@@ -1690,7 +1690,10 @@ document.getElementById('csvFile').addEventListener('change', function (e) {
         const startIndex = rows[0].toLowerCase().includes('rut') ? 1 : 0;
 
         for (let i = startIndex; i < rows.length; i++) {
-            const cols = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, '')); // Remove quotes
+            // Detect delimiter (comma or semicolon)
+            const rowStr = rows[i];
+            const delimiter = rowStr.includes(';') ? ';' : ',';
+            const cols = rowStr.split(delimiter).map(c => c.trim().replace(/^"|"$/g, ''));
 
             // Expected format: RUT, Nombres, ApellidoPaterno, ApellidoMaterno
             if (cols.length >= 2) {

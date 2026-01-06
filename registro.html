@@ -94,15 +94,17 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal" style="display: none;">
-        <div class="modal-content success-animation">
-            <div class="success-icon">
-                <i data-lucide="check-circle"></i>
+    <!-- Result Modal (Success/Error) -->
+    <div id="resultModal" class="modal" style="display: none;">
+        <div class="modal-content animate-scale-in">
+            <div id="resultIconContainer" class="success-icon">
+                <i id="resultIcon" data-lucide="check-circle"></i>
             </div>
-            <h3>¡Asistencia Registrada!</h3>
-            <p id="successMessage"></p>
-            <p class="redirect-message">Redirigiendo al inicio...</p>
+            <h3 id="resultTitle">¡Asistencia Registrada!</h3>
+            <p id="resultMessage"></p>
+            <p class="redirect-message" id="redirectMessage">Redirigiendo al inicio...</p>
+            <button id="btnCloseModal" class="btn-secondary" style="margin-top: 1rem; display: none;"
+                onclick="closeResultModal()">Cerrar</button>
         </div>
     </div>
 
