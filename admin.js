@@ -1428,6 +1428,68 @@ window.showView = function (viewId) {
 }
 
 // ===================================
+// CSV Import Logic
+// ===================================
+document.getElementById('csvFile').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const text = e.target.result;
+        const rows = text.split('\n').filter(row => row.trim() !== '');
+
+        let newSocias = 0;
+        let errors = 0;
+        const socias = getSocias();
+
+        // Skip header if present (simple check)
+        const startIndex = rows[0].toLowerCase().includes('rut') ? 1 : 0;
+
+        for (let i = startIndex; i < rows.length; i++) {
+            const cols = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, '')); // Remove quotes
+
+            // Expected format: RUT, Nombre, Email, Estado
+            if (cols.length >= 2) {
+                const rut = cleanRUT(cols[0]);
+                if (validateRUT(rut)) {
+                    // Check if exists
+                    const exists = socias.findIndex(s => cleanRUT(s.rut) === rut);
+
+                    const newSocia = {
+                        rut: formatRUT(rut),
+                        nombres: cols[1] || 'Socia Importada',
+                        email: cols[2] || '',
+                        estado: cols[3] || 'Activo',
+                        fechaIngreso: new Date().toISOString().split('T')[0]
+                    };
+
+                    if (exists >= 0) {
+                        socias[exists] = { ...socias[exists], ...newSocia };
+                    } else {
+                        socias.push(newSocia);
+                        newSocias++;
+                    }
+                } else {
+                    errors++;
+                }
+            }
+        }
+
+        if (newSocias > 0 || errors === 0) {
+            localStorage.setItem('usuarios', JSON.stringify(socias));
+            loadSocias();
+            initializeDashboard();
+            alert(`Importación completada.\nNuevas socias: ${newSocias}\nErrores: ${errors}`);
+            closeModal('importarModal');
+        } else {
+            alert(`Hubo errores en la importación. Errores: ${errors}`);
+        }
+    };
+    reader.readAsText(file);
+});
+
+// ===================================
 // Enrolment QR Logic
 // ===================================
 let enrolScanner = null;
