@@ -13,7 +13,9 @@
         rel="stylesheet">
 
     <script src="version-control.js"></script>
-    <link rel="stylesheet" href="styles.css?v=3.0.5">
+    <script>
+        document.write('<link rel="stylesheet" href="styles.css?v=' + new Date().getTime() + '">');
+    </script>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -133,15 +135,7 @@
                         </div>
                     </div>
 
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.4s">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                            <i data-lucide="image"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="fotosRegistradas">0</h3>
-                            <p>Fotos Registradas</p>
-                        </div>
-                    </div>
+                    <!-- Card Removed -->
                 </div>
 
                 <!-- Calendar Section -->
@@ -885,10 +879,13 @@
         </div>
     </div>
 
-    <script src="google-drive-integration.js?v=3.0.5"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="ai-assistant.js?v=3.0.5"></script>
-    <script src="admin.js?v=3.0.5"></script>
+    <script>
+        const ts = new Date().getTime();
+        document.write('<script src="google-drive-integration.js?v=' + ts + '"><\/script>');
+        document.write('<script src="ai-assistant.js?v=' + ts + '"><\/script>');
+        document.write('<script src="admin.js?v=' + ts + '"><\/script>');
+    </script>
     <script>
         lucide.createIcons();
     </script>

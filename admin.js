@@ -258,12 +258,10 @@ function initializeDashboard() {
     const totalSocias = socias.length;
     const asistenciasHoy = asistencias.filter(a => a.fecha === today).length;
     const reunionesActivas = meetings.filter(m => m.estado === 'Activa').length;
-    const fotosRegistradas = asistencias.filter(a => a.photoURL).length;
 
     document.getElementById('totalSocias').textContent = totalSocias;
     document.getElementById('asistenciasHoy').textContent = asistenciasHoy;
     document.getElementById('totalReuniones').textContent = reunionesActivas;
-    document.getElementById('fotosRegistradas').textContent = fotosRegistradas;
 
     loadRecentActivity();
     loadDashboardCalendar();

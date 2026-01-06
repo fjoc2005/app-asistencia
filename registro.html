@@ -11,7 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <script src="version-control.js"></script>
-    <link rel="stylesheet" href="styles.css?v=3.0.5">
+    <script>
+        document.write('<link rel="stylesheet" href="styles.css?v=' + new Date().getTime() + '">');
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -112,7 +114,9 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <!-- google-drive.js removed -->
-    <script src="app.js?v=3.0.4"></script>
+    <script>
+        document.write('<script src="app.js?v=' + new Date().getTime() + '"><\/script>');
+    </script>
     <script>
         lucide.createIcons();
     </script>

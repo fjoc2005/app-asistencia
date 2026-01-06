@@ -11,8 +11,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <script src="version-control.js"></script>
-    <link rel="stylesheet" href="styles.css?v=3.0.5">
-    <link rel="stylesheet" href="login.css?v=3.0.5">
+    <script>
+        const ts = new Date().getTime();
+        document.write('<link rel="stylesheet" href="styles.css?v=' + ts + '">');
+        document.write('<link rel="stylesheet" href="login.css?v=' + ts + '">');
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -71,7 +74,9 @@
         <div class="circle circle-2"></div>
     </div>
 
-    <script src="admin.js?v=3.0.4"></script>
+    <script>
+        document.write('<script src="admin.js?v=' + new Date().getTime() + '"><\/script>');
+    </script>
     <script>
         lucide.createIcons();
     </script>
