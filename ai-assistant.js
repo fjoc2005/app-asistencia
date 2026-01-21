@@ -18,18 +18,20 @@ class AIAssistant {
         search: /(busca|encuentra|muestra|dame|ver).*socia/i,
         add: /(agrega|añade|crea|nueva?).*socia/i,
         update: /(actualiza|modifica|cambia|edita)/i,
-        stats: /(estadísticas?|resumen|reporte|informe)/i,
+        stats: /(estadísticas?|resumen|informe)/i,
         export: /(exporta|guarda|sincroniza).*(?:drive|sheets|google)/i,
         help: /^(ayuda|help|\?|qué puedes hacer)/i,
-        meetings: /(reunión|reuniones|meeting)/i
+        meetings: /(reunión|reuniones|meeting)/i,
+        discount: /(descuento|rebaja|convenio)/i,
+        report_individual: /(reporte.*individual|ficha.*socia)/i,
+        report_group: /(reporte.*(grupal|masivo)|nomina|listado)/i
     };
 
     // Quick action suggestions
     quickActions = [
-        { label: '🔍 Buscar', command: 'Busca una socia' },
-        { label: '➕ Agregar', command: 'Agrega una nueva socia' },
-        { label: '📊 Estadísticas', command: '¿Cuántas socias tenemos?' },
-        { label: '☁️ Exportar', command: 'Exporta a Google Sheets' }
+        { label: '📅 Crear reunión', command: 'Crear nueva reunión' },
+        { label: '➕ Agregar socia', command: 'Agregar nueva socia' },
+        { label: '📄 Rep. Individual', command: 'Reporte individual' }
     ];
 
     // Process user message
@@ -104,8 +106,26 @@ class AIAssistant {
             return await this.exportToGoogleDrive();
         }
 
+        // Discount
+        if (this.patterns.discount.test(msg)) {
+            return this.handleDiscount();
+        }
+
+        // Report Individual
+        if (this.patterns.report_individual.test(msg)) {
+            return this.handleIndividualReport();
+        }
+
+        // Report Group
+        if (this.patterns.report_group.test(msg)) {
+            return this.handleGroupReport();
+        }
+
         // Meetings
         if (this.patterns.meetings.test(msg)) {
+            if (msg.toLowerCase().includes('crea') || msg.toLowerCase().includes('nueva')) {
+                return this.startAddMeetingFlow();
+            }
             return this.getMeetingsInfo();
         }
 
@@ -161,14 +181,24 @@ class AIAssistant {
         if (results.length === 1) {
             const s = results[0];
             const fullName = `${s.nombres || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`.trim();
-            return `✅ **Encontré a:**\n\n` +
+            return `✅ **Ficha de Socia:**\n\n` +
                 `**${fullName}**\n` +
+                `• N° REG: ${s.numReg || '-'}\n` +
                 `• RUT: ${s.rut}\n` +
+                `• Comuna: ${s.comuna || '-'}\n` +
+                `• N° REG ANT: ${s.numRegAnt || '-'}\n` +
+                `• F. Nacimiento: ${s.fechaNacimiento || '-'}\n` +
+                `• Edad: ${s.edad || '-'}\n` +
+                `• Est. Civil: ${s.estadoCivil || '-'}\n` +
+                `• Celular: ${s.celular || '-'}\n` +
+                `• Dirección: ${s.direccion || '-'}\n` +
                 `• Email: ${s.email}\n` +
-                `• Estado: ${s.estado}\n` +
-                `• Banco: ${s.banco || 'No especificado'}\n` +
-                `• Talla: ${s.talla || 'No especificada'}\n\n` +
-                `¿Necesitas algo más?`;
+                `• RBD: ${s.rbd || '-'}\n` +
+                `• Año PAE: ${s.anoIngresoPae || '-'}\n` +
+                `• Hijos: Menores (${s.hijosMenores || '0'}), Mayores (${s.hijosMayores || '0'})\n` +
+                `• Empresa: ${s.empresa || '-'}\n` +
+                `• Estado: ${s.estado}\n\n` +
+                `¿Deseas actualizar algún dato?`;
         }
 
         // Multiple results
@@ -216,74 +246,155 @@ class AIAssistant {
             return await this.handleUpdateSociaInput(input);
         }
 
-        // Handle add socia flow
+        // Handle add flows
         switch (context.step) {
             case 'rut':
-                if (!validateRUT(input)) {
-                    return '❌ El RUT no es válido. Por favor ingresa un RUT válido (Ejemplo: 12.345.678-9)';
-                }
-
-                // Check if RUT already exists
-                const socias = getSocias();
-                if (socias.find(s => cleanRUT(s.rut) === cleanRUT(input))) {
+                if (!validateRUT(input)) return '❌ RUT inválido. Ingresa uno como 12.345.678-9';
+                if (getSocias().find(s => cleanRUT(s.rut) === cleanRUT(input))) {
                     this.resetContext();
-                    return '❌ Este RUT ya está registrado. ¿Quieres buscar a esta socia o hacer otra cosa?';
+                    return '❌ Este RUT ya existe. ¿Deseas buscarla o actualizarla?';
                 }
-
                 context.data.rut = formatRUT(input);
+                context.step = 'numReg';
+                this.awaitingInput = 'numReg';
+                return `✅ RUT: ${context.data.rut}\n\n¿Cuál es el **N° de REG**?`;
+
+            case 'numReg':
+                context.data.numReg = input.trim();
                 context.step = 'nombres';
                 this.awaitingInput = 'nombres';
-                return `✅ RUT: ${formatRUT(input)}\n\nAhora, ¿cuáles son los **nombres**?`;
+                return '✅ Registrado.\n\n¿Cuáles son los **nombres**?';
 
             case 'nombres':
-                if (!input.trim()) {
-                    return '❌ Por favor ingresa los nombres.';
-                }
                 context.data.nombres = input.trim();
                 context.step = 'apellidoPaterno';
                 this.awaitingInput = 'apellidoPaterno';
-                return '✅ Perfecto.\n\n¿Cuál es el **apellido paterno**?';
+                return '✅ Bien.\n\n¿Cuál es el **apellido paterno**?';
 
             case 'apellidoPaterno':
-                if (!input.trim()) {
-                    return '❌ Por favor ingresa el apellido paterno.';
-                }
                 context.data.apellidoPaterno = input.trim();
                 context.step = 'apellidoMaterno';
                 this.awaitingInput = 'apellidoMaterno';
-                return '✅ Bien.\n\n¿Cuál es el **apellido materno**?';
+                return '✅ Ok.\n\n¿Cuál es el **apellido materno**?';
 
             case 'apellidoMaterno':
-                if (!input.trim()) {
-                    return '❌ Por favor ingresa el apellido materno.';
-                }
                 context.data.apellidoMaterno = input.trim();
+                context.step = 'comuna';
+                this.awaitingInput = 'comuna';
+                return '✅ Entendido.\n\n¿En qué **comuna** reside?';
+
+            case 'comuna':
+                context.data.comuna = input.trim();
+                context.step = 'numRegAnt';
+                this.awaitingInput = 'numRegAnt';
+                return '✅ Registrada.\n\n¿Tiene un **N° de REG ANT**? (Escribe "no" si no tiene)';
+
+            case 'numRegAnt':
+                context.data.numRegAnt = input.toLowerCase() === 'no' ? '' : input.trim();
+                context.step = 'fechaNacimiento';
+                this.awaitingInput = 'fechaNacimiento';
+                return '✅ Guardado.\n\n¿Cuál es su **fecha de nacimiento**? (AAAA-MM-DD)';
+
+            case 'fechaNacimiento':
+                context.data.fechaNacimiento = input.trim();
+                context.step = 'edad';
+                this.awaitingInput = 'edad';
+                return '✅ Ok.\n\n¿Qué **edad** tiene?';
+
+            case 'edad':
+                context.data.edad = input.trim();
+                context.step = 'estadoCivil';
+                this.awaitingInput = 'estadoCivil';
+                return '✅ Bien.\n\n¿Su **estado civil**? (Soltera, Casada, etc.)';
+
+            case 'estadoCivil':
+                context.data.estadoCivil = input.trim();
+                context.step = 'celular';
+                this.awaitingInput = 'celular';
+                return '✅ Ok.\n\n¿Cuál es su **número de celular**?';
+
+            case 'celular':
+                context.data.celular = input.trim();
+                context.step = 'direccion';
+                this.awaitingInput = 'direccion';
+                return '✅ Guardado.\n\n¿Cuál es su **dirección**?';
+
+            case 'direccion':
+                context.data.direccion = input.trim();
                 context.step = 'email';
                 this.awaitingInput = 'email';
-                return '✅ Excelente.\n\n¿Cuál es el **email**?';
+                return '✅ Entendido.\n\n¿Cuál es su **correo electrónico**?';
 
             case 'email':
-                if (!input.includes('@')) {
-                    return '❌ Por favor ingresa un email válido.';
-                }
+                if (!input.includes('@')) return '❌ Email inválido.';
                 context.data.email = input.trim();
+                context.step = 'rbd';
+                this.awaitingInput = 'rbd';
+                return '✅ Ok.\n\n¿Cuál es el **RBD** del establecimiento?';
+
+            case 'rbd':
+                context.data.rbd = input.trim();
+                context.step = 'anoIngresoPae';
+                this.awaitingInput = 'anoIngresoPae';
+                return '✅ Registrado.\n\n¿En qué **año ingresó al PAE**?';
+
+            case 'anoIngresoPae':
+                context.data.anoIngresoPae = input.trim();
+                context.step = 'hijosMenores';
+                this.awaitingInput = 'hijosMenores';
+                return '✅ Bien.\n\n¿Cuántos **hijos menores** tiene?';
+
+            case 'hijosMenores':
+                context.data.hijosMenores = input.trim();
+                context.step = 'hijosMayores';
+                this.awaitingInput = 'hijosMayores';
+                return '✅ Ok.\n\n¿Y cuántos **hijos mayores**?';
+
+            case 'hijosMayores':
+                context.data.hijosMayores = input.trim();
+                context.step = 'empresa';
+                this.awaitingInput = 'empresa';
+                return '✅ Entendido.\n\n¿En qué **empresa** trabaja?';
+
+            case 'empresa':
+                context.data.empresa = input.trim();
                 context.data.estado = 'Activo';
                 context.data.fechaRegistro = new Date().toLocaleDateString('es-CL');
 
-                // Save socia
                 saveSocia(context.data);
-                loadSocias();
-                loadAttendanceMatrix();
-                initializeDashboard();
+                if (typeof loadSocias === 'function') loadSocias();
+                if (typeof initializeDashboard === 'function') initializeDashboard();
 
-                const fullName = `${context.data.nombres} ${context.data.apellidoPaterno} ${context.data.apellidoMaterno}`;
                 this.resetContext();
+                return `✅ **¡Socia registrada exitosamente!**\n\nSe ha creado la ficha completa para **${context.data.nombres} ${context.data.apellidoPaterno}**. ¿Necesitas algo más?`;
 
-                return `✅ **¡Socia agregada exitosamente!**\n\n` +
-                    `**${fullName}**\n` +
-                    `• RUT: ${context.data.rut}\n` +
-                    `• Email: ${context.data.email}\n\n` +
-                    `La socia ha sido registrada en el sistema. ¿Necesitas algo más?`;
+            case 'meeting_name':
+                context.data.nombre = input.trim();
+                context.step = 'meeting_date';
+                this.awaitingInput = 'meeting_date';
+                return '✅ Nombre: ' + context.data.nombre + '\n\n¿Para qué **fecha** es la reunión? (Ejemplo: 2024-05-20)';
+
+            case 'meeting_date':
+                context.data.fecha = input.trim();
+                context.step = 'meeting_time';
+                this.awaitingInput = 'meeting_time';
+                return '✅ Fecha: ' + context.data.fecha + '\n\n¿A qué **hora**? (Ejemplo: 18:30)';
+
+            case 'meeting_time':
+                context.data.hora = input.trim();
+                context.data.id = Date.now().toString();
+                context.data.estado = 'Activa';
+                context.data.habilitada = true;
+
+                const mtngs = getMeetings();
+                mtngs.push(context.data);
+                localStorage.setItem('meetings', JSON.stringify(mtngs));
+
+                if (typeof loadMeetings === 'function') loadMeetings();
+                if (typeof initializeDashboard === 'function') initializeDashboard();
+
+                this.resetContext();
+                return `✅ **¡Reunión creada exitosamente!**\n\n**${context.data.nombre}**\n• Fecha: ${context.data.fecha}\n• Hora: ${context.data.hora}\n\nYa puedes verla en el calendario. ¿Algo más?`;
         }
     }
 
@@ -295,7 +406,7 @@ class AIAssistant {
         const today = new Date().toLocaleDateString('es-CL');
 
         const activeSocias = socias.filter(s => s.estado === 'Activo').length;
-        const activeMeetings = meetings.filter(m => m.estado === 'Activa').length;
+        const activeMeetings = meetings.filter(m => m.habilitada !== false).length;
         const todayAttendance = asistencias.filter(a => a.fecha === today).length;
 
         return `📊 **Estadísticas del Sistema:**\n\n` +
@@ -306,229 +417,156 @@ class AIAssistant {
             `• Total: ${meetings.length}\n` +
             `• Activas: ${activeMeetings}\n\n` +
             `**Asistencias:**\n` +
-            `• Hoy: ${todayAttendance}\n` +
-            `• Total registradas: ${asistencias.length}\n\n` +
+            `• Hoy: ${todayAttendance}\n\n` +
             `¿Quieres ver más detalles?`;
     }
 
     // Export to Google Drive
     async exportToGoogleDrive() {
-        if (!driveIntegration) {
-            return '❌ La integración con Google Drive no está disponible. Por favor recarga la página.';
-        }
-
-        const status = driveIntegration.getStatus();
-        if (!status.isConnected) {
-            return '❌ No estás conectado a Google Drive.\n\nPor favor ve a la sección "Vinculación de Cuentas" y conecta tu cuenta de Google primero.';
-        }
+        if (!driveIntegration) return '❌ La integración no está disponible.';
+        if (!driveIntegration.isSignedIn) return '❌ No estás conectado a Google Drive.';
 
         try {
             await driveIntegration.exportSociasToSheets();
-            return '✅ **¡Exportación exitosa!**\n\nLas socias han sido exportadas a Google Sheets. Puedes encontrar el archivo en tu carpeta "Control y Gestión de Asistencia APP" en Google Drive.';
+            return '✅ **¡Exportación exitosa!**\n\nEncuentra el archivo en tu carpeta de Google Drive.';
         } catch (error) {
-            return '❌ Hubo un error al exportar a Google Drive. Por favor intenta nuevamente.';
+            return '❌ Error al exportar.';
         }
     }
 
     // Get meetings info
     getMeetingsInfo() {
         const meetings = getMeetings();
+        if (meetings.length === 0) return '📅 No hay reuniones registradas. ¿Quieres crear una?';
 
-        if (meetings.length === 0) {
-            return '📅 No hay reuniones registradas.\n\n¿Quieres crear una nueva reunión?';
-        }
-
-        const active = meetings.filter(m => m.estado === 'Activa');
-        let response = `📅 **Reuniones:**\n\n`;
-        response += `• Total: ${meetings.length}\n`;
-        response += `• Activas: ${active.length}\n\n`;
-
+        const active = meetings.filter(m => m.habilitada !== false);
+        let response = `📅 **Reuniones:**\n\n• Total: ${meetings.length}\n• Activas: ${active.length}\n\n`;
         if (active.length > 0) {
-            response += '**Próximas reuniones:**\n';
+            response += '**Próximas:**\n';
             active.slice(0, 3).forEach(m => {
                 response += `• ${m.nombre} - ${m.fecha} ${m.hora}\n`;
             });
         }
-
         return response + '\n¿Necesitas más información?';
     }
 
-    // Get help message
+    // Help
     getHelpMessage() {
         return '🤖 **¿Cómo puedo ayudarte?**\n\n' +
-            'Puedo realizar las siguientes acciones:\n\n' +
             '**📋 Gestión de Socias:**\n' +
             '• "Busca a María González"\n' +
-            '• "Agrega una nueva socia"\n' +
-            '• "Actualizar datos"\n' +
-            '• "¿Cuántas socias tenemos?"\n\n' +
+            '• "Agrega una nueva socia"\n\n' +
+            '**📅 Reuniones:**\n' +
+            '• "Crea una reunión"\n' +
+            '• "Ver mis reuniones"\n\n' +
             '**📊 Información:**\n' +
             '• "Dame estadísticas"\n' +
-            '• "¿Cuántas reuniones hay?"\n\n' +
-            '**☁️ Google Drive:**\n' +
-            '• "Exporta a Google Sheets"\n' +
-            '• "Sincroniza con Drive"\n\n' +
+            '• "Exporta a Google Sheets"\n\n' +
             '¿Qué te gustaría hacer?';
     }
 
-    // Handle update socia input
+    // Update socia input
     async handleUpdateSociaInput(input) {
         const context = this.currentContext;
 
         switch (context.step) {
             case 'findRut':
-                if (!validateRUT(input)) {
-                    return '❌ El RUT no es válido. Por favor ingresa un RUT válido (Ejemplo: 12.345.678-9)';
-                }
-
-                // Find socia
+                if (!validateRUT(input)) return '❌ RUT no válido.';
                 const socias = getSocias();
                 const socia = socias.find(s => cleanRUT(s.rut) === cleanRUT(input));
+                if (!socia) return '❌ No encontré esa socia.';
 
-                if (!socia) {
-                    this.resetContext();
-                    return '❌ No encontré ninguna socia con ese RUT. ¿Quieres buscar otra o agregar una nueva?';
-                }
-
-                // Store socia data
                 context.data = { ...socia };
                 context.step = 'selectField';
                 this.awaitingInput = 'selectField';
-
-                const fullName = `${socia.nombres || ''} ${socia.apellidoPaterno || ''} ${socia.apellidoMaterno || ''}`.trim();
-                return `✅ **Encontré a: ${fullName}**\n\n` +
-                    `**Datos actuales:**\n` +
-                    `• RUT: ${socia.rut}\n` +
-                    `• Nombres: ${socia.nombres || 'No especificado'}\n` +
-                    `• Apellido Paterno: ${socia.apellidoPaterno || 'No especificado'}\n` +
-                    `• Apellido Materno: ${socia.apellidoMaterno || 'No especificado'}\n` +
-                    `• Email: ${socia.email || 'No especificado'}\n` +
-                    `• Estado: ${socia.estado || 'No especificado'}\n` +
-                    `• Banco: ${socia.banco || 'No especificado'}\n` +
-                    `• Cuenta: ${socia.cuenta || 'No especificado'}\n` +
-                    `• Talla: ${socia.talla || 'No especificado'}\n` +
-                    `• Zapatos: ${socia.zapatos || 'No especificado'}\n\n` +
-                    `¿Qué campo quieres actualizar? Escribe:\n` +
-                    `• **nombres** - para cambiar los nombres\n` +
-                    `• **apellidoPaterno** - para cambiar el apellido paterno\n` +
-                    `• **apellidoMaterno** - para cambiar el apellido materno\n` +
-                    `• **email** - para cambiar el email\n` +
-                    `• **estado** - para cambiar el estado\n` +
-                    `• **banco** - para cambiar el banco\n` +
-                    `• **cuenta** - para cambiar la cuenta\n` +
-                    `• **talla** - para cambiar la talla\n` +
-                    `• **zapatos** - para cambiar la talla de zapatos\n` +
-                    `• **cancelar** - para cancelar la actualización`;
+                return `✅ **Encontré a: ${socia.nombres}**\n\n¿Qué campo quieres actualizar? (nombres, email, estado, banco, etc.)`;
 
             case 'selectField':
                 const field = input.trim().toLowerCase();
+                const validFields = {
+                    'numreg': 'numReg', 'rut': 'rut', 'nombres': 'nombres', 'apellidopaterno': 'apellidoPaterno',
+                    'apellidomaterno': 'apellidoMaterno', 'comuna': 'comuna', 'numregant': 'numRegAnt',
+                    'fechanacimiento': 'fechaNacimiento', 'edad': 'edad', 'estadocivil': 'estadoCivil',
+                    'celular': 'celular', 'direccion': 'direccion', 'email': 'email', 'rbd': 'rbd',
+                    'anoingresopae': 'anoIngresoPae', 'hijosmenores': 'hijosMenores', 'hijosmayores': 'hijosMayores',
+                    'empresa': 'empresa', 'estado': 'estado'
+                };
 
-                if (field === 'cancelar') {
-                    this.resetContext();
-                    return '❌ Actualización cancelada. ¿Necesitas algo más?';
-                }
+                if (field === 'cancelar') { this.resetContext(); return '❌ Cancelado.'; }
+                if (!validFields[field.replace(/ /g, '')]) return `❌ Campo "${field}" no reconocido. Elige uno de la lista.`;
 
-                const validFields = ['nombres', 'apellidopaterno', 'apellidomaterno', 'email', 'estado', 'banco', 'cuenta', 'talla', 'zapatos'];
-                if (!validFields.includes(field)) {
-                    return '❌ Campo no válido. Por favor elige uno de los campos listados arriba.';
-                }
-
-                context.fieldToUpdate = field;
+                context.fieldToUpdate = validFields[field.replace(/ /g, '')];
                 context.step = 'newValue';
                 this.awaitingInput = 'newValue';
-
-                let fieldLabel = field;
-                if (field === 'apellidopaterno') fieldLabel = 'apellido paterno';
-                if (field === 'apellidomaterno') fieldLabel = 'apellido materno';
-
-                return `✏️ Perfecto, vamos a actualizar el campo **${fieldLabel}**.\n\n¿Cuál es el nuevo valor?`;
+                return `✏️ Nuevo valor para **${context.fieldToUpdate}**:`;
 
             case 'newValue':
                 const newValue = input.trim();
+                const fieldKey = context.fieldToUpdate;
+                context.data[fieldKey] = newValue;
 
-                if (!newValue) {
-                    return '❌ El valor no puede estar vacío. Por favor ingresa un valor válido.';
-                }
-
-                // Validate email if updating email
-                if (context.fieldToUpdate === 'email' && !newValue.includes('@')) {
-                    return '❌ Por favor ingresa un email válido.';
-                }
-
-                // Validate estado if updating estado
-                if (context.fieldToUpdate === 'estado' && !['activo', 'inactivo'].includes(newValue.toLowerCase())) {
-                    return '❌ El estado debe ser "Activo" o "Inactivo".';
-                }
-
-                // Update the field
-                const fieldKey = context.fieldToUpdate === 'apellidopaterno' ? 'apellidoPaterno' :
-                    context.fieldToUpdate === 'apellidomaterno' ? 'apellidoMaterno' :
-                        context.fieldToUpdate;
-
-                const oldValue = context.data[fieldKey];
-                context.data[fieldKey] = context.fieldToUpdate === 'estado' ?
-                    (newValue.toLowerCase() === 'activo' ? 'Activo' : 'Inactivo') : newValue;
-
-                // Update in database
                 const allSocias = getSocias();
-                const index = allSocias.findIndex(s => cleanRUT(s.rut) === cleanRUT(context.data.rut));
-                if (index !== -1) {
-                    allSocias[index] = context.data;
+                const idx = allSocias.findIndex(s => cleanRUT(s.rut) === cleanRUT(context.data.rut));
+                if (idx !== -1) {
+                    allSocias[idx] = context.data;
                     localStorage.setItem('usuarios', JSON.stringify(allSocias));
-                    loadSocias();
-                    loadAttendanceMatrix();
-                    initializeDashboard();
                 }
-
-                const sociaFullName = `${context.data.nombres || ''} ${context.data.apellidoPaterno || ''} ${context.data.apellidoMaterno || ''}`.trim();
                 this.resetContext();
-
-                return `✅ **¡Datos actualizados exitosamente!**\n\n` +
-                    `**${sociaFullName}**\n` +
-                    `• Campo: **${fieldKey}**\n` +
-                    `• Valor anterior: ${oldValue || 'No especificado'}\n` +
-                    `• Valor nuevo: ${context.data[fieldKey]}\n\n` +
-                    `Los datos han sido actualizados en el sistema. ¿Necesitas actualizar otro campo o hacer algo más?`;
+                return '✅ ¡Datos actualizados!';
         }
     }
 
-    // Reset conversation context
-    resetContext() {
-        this.currentContext = null;
-        this.awaitingInput = null;
-    }
-
-    // Save conversation history
+    resetContext() { this.currentContext = null; this.awaitingInput = null; }
     saveHistory() {
-        // Keep only last 50 messages
-        if (this.conversationHistory.length > 50) {
-            this.conversationHistory = this.conversationHistory.slice(-50);
-        }
+        if (this.conversationHistory.length > 50) this.conversationHistory = this.conversationHistory.slice(-50);
         localStorage.setItem('aiAssistantHistory', JSON.stringify(this.conversationHistory));
     }
-
-    // Load conversation history
     loadHistory() {
         const history = localStorage.getItem('aiAssistantHistory');
-        if (history) {
-            this.conversationHistory = JSON.parse(history);
+        if (history) this.conversationHistory = JSON.parse(history);
+    }
+    clearHistory() { this.conversationHistory = []; localStorage.removeItem('aiAssistantHistory'); }
+    getHistory() { return this.conversationHistory; }
+    getQuickActions() { return this.quickActions; }
+
+    // Navigation handlers
+    handleDiscount() { showView('descuentos'); return 'Sección de **Descuentos**.'; }
+    handleIndividualReport() { showView('reportes'); return 'Sección de **Reportes**.'; }
+    handleGroupReport() { showView('reportes'); return 'Sección de **Reportes**.'; }
+
+    // Proactive features
+    startAddMeetingFlow() {
+        this.currentContext = { action: 'addMeeting', data: {}, step: 'meeting_name' };
+        this.awaitingInput = 'meeting_name';
+        return '📅 ¡Genial! ¿Qué **nombre** tendrá la reunión?';
+    }
+
+    triggerGreeting() {
+        const bubble = document.getElementById('ai-reminder-bubble');
+        if (bubble) {
+            bubble.style.display = 'block';
+            setTimeout(() => { bubble.style.opacity = '1'; this.checkReminders(); }, 1000);
         }
     }
 
-    // Clear history
-    clearHistory() {
-        this.conversationHistory = [];
-        localStorage.removeItem('aiAssistantHistory');
-    }
+    checkReminders() {
+        // Target the message element specifically to preserve Avatar/Close button
+        const messageEl = document.querySelector('#ai-reminder-bubble .ai-bubble-message');
+        const titleEl = document.querySelector('#ai-reminder-bubble .ai-bubble-title');
 
-    // Get conversation history
-    getHistory() {
-        return this.conversationHistory;
-    }
+        if (!messageEl) return;
 
-    // Get quick actions
-    getQuickActions() {
-        return this.quickActions;
+        const mtgs = getMeetings();
+        const today = new Date().toISOString().split('T')[0];
+        const mtgToday = mtgs.find(m => m.fecha === today);
+
+        if (titleEl) titleEl.textContent = '¡Hola!';
+
+        if (mtgToday) {
+            messageEl.innerHTML = `Tienes la reunión <strong>"${mtgToday.nombre}"</strong> hoy.`;
+        } else {
+            messageEl.textContent = '¿Cómo puedo ayudarte hoy?';
+        }
     }
 }
 
@@ -538,4 +576,6 @@ let aiAssistant = null;
 // Initialize on page load
 if (document.querySelector('.admin-page')) {
     aiAssistant = new AIAssistant();
+    // Auto-greeting after a delay
+    setTimeout(() => { if (aiAssistant) aiAssistant.triggerGreeting(); }, 2000);
 }

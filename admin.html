@@ -8,15 +8,20 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap"
+        rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <script src="version-control.js"></script>
+    <script>
+        document.write('<link rel="stylesheet" href="styles.css?v=' + new Date().getTime() + '">');
+    </script>
 
-    <!-- Manifest for PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4F46E5">
-
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
 
 <body class="admin-page">
@@ -24,32 +29,45 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo-icon-small">
-                    <i data-lucide="clipboard-check"></i>
+                <div class="header-logo-group">
+                    <div class="logo-icon-small">
+                        <i data-lucide="clipboard-check"></i>
+                    </div>
+                    <h3>SINTRAMAE</h3>
                 </div>
-                <h3>APP Asistencia</h3>
+                <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">
+                    <i data-lucide="menu"></i>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
                 <a href="#dashboard" class="nav-item active" onclick="showView('dashboard')">
                     <i data-lucide="layout-dashboard"></i>
-                    Dashboard
+                    <span class="nav-text">Dashboard</span>
                 </a>
                 <a href="#control-asistencia" class="nav-item" onclick="showView('controlAsistencia')">
                     <i data-lucide="clipboard-check"></i>
-                    Control de Asistencia
+                    <span class="nav-text">Control de Asistencia</span>
                 </a>
                 <a href="#nomina-socias" class="nav-item" onclick="showView('nominaSocias')">
                     <i data-lucide="users"></i>
-                    Nómina de Socias
+                    <span class="nav-text">Nómina de Socias</span>
                 </a>
                 <a href="#descuentos" class="nav-item" onclick="showView('descuentos')">
                     <i data-lucide="percent"></i>
-                    Descuentos
+                    <span class="nav-text">Descuentos</span>
+                </a>
+                <a href="#reportes" class="nav-item" onclick="showView('reportes')">
+                    <i data-lucide="file-text"></i>
+                    <span class="nav-text">Reportes</span>
                 </a>
                 <a href="#vinculacion" class="nav-item" onclick="showView('vinculacion')">
                     <i data-lucide="cloud"></i>
-                    Vinculación de Cuentas
+                    <span class="nav-text">Vinculación de Cuentas</span>
+                </a>
+                <a href="#generar-documentos" class="nav-item" onclick="showView('generarDocumentos')">
+                    <i data-lucide="file-check"></i>
+                    <span class="nav-text">Documentos</span>
                 </a>
             </nav>
 
@@ -58,6 +76,9 @@
                     <i data-lucide="log-out"></i>
                     Cerrar Sesión
                 </button>
+                <div class="branding-footer">
+                    Desarrollado para <strong>Sintramae</strong>
+                </div>
             </div>
         </aside>
 
@@ -73,8 +94,17 @@
 
             <!-- Dashboard View -->
             <div id="dashboardView" class="view-content active">
+                <div class="dashboard-actions" style="margin-bottom: 2rem; display: flex; justify-content: flex-start;">
+                    <button class="btn-primary" onclick="showEnrolarModal()">
+                        <i data-lucide="qr-code"></i>
+                        Enrolar Nuevo Usuario
+                    </button>
+                    <!-- More left-aligned actions can go here -->
+                </div>
+
                 <div class="stats-grid">
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.1s">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.1s; cursor: pointer;"
+                        onclick="showView('nominaSocias')">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                             <i data-lucide="users"></i>
                         </div>
@@ -84,7 +114,8 @@
                         </div>
                     </div>
 
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.2s">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.2s; cursor: pointer;"
+                        onclick="showView('controlAsistencia'); showControlTab('matriz');">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                             <i data-lucide="calendar-check"></i>
                         </div>
@@ -94,7 +125,8 @@
                         </div>
                     </div>
 
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.3s">
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.3s; cursor: pointer;"
+                        onclick="showView('controlAsistencia'); showControlTab('reuniones');">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                             <i data-lucide="calendar"></i>
                         </div>
@@ -104,15 +136,13 @@
                         </div>
                     </div>
 
-                    <div class="stat-card animate-scale-in" style="animation-delay: 0.4s">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                            <i data-lucide="image"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="fotosRegistradas">0</h3>
-                            <p>Fotos Registradas</p>
-                        </div>
-                    </div>
+                    <!-- Card Removed -->
+                </div>
+
+                <!-- Calendar Section -->
+                <div class="calendar-section animate-scale-in" style="animation-delay: 0.5s; margin: 2rem 0;">
+                    <h2>Próximos Eventos</h2>
+                    <div id="dashboard-calendar"></div>
                 </div>
 
                 <div class="recent-activity">
@@ -187,10 +217,29 @@
                             <i data-lucide="upload"></i>
                             Importar CSV
                         </button>
+                        <button class="btn-danger" onclick="deleteAllSocias()">
+                            <i data-lucide="trash-2"></i>
+                            Eliminar Todas
+                        </button>
                         <button class="btn-primary" onclick="showNuevaSociaModal()">
                             <i data-lucide="user-plus"></i>
                             Nueva Socia
                         </button>
+                        <button class="btn-success" onclick="manualSaveSocias()"
+                            style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                            <i data-lucide="save"></i>
+                            Guardar Info
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-tabs-container">
+                    <div class="table-tabs">
+                        <button class="table-tab active" onclick="filterTableColumns('all')">Todo</button>
+                        <button class="table-tab" onclick="filterTableColumns('basico')">Básico</button>
+                        <button class="table-tab" onclick="filterTableColumns('contacto')">Contacto</button>
+                        <button class="table-tab" onclick="filterTableColumns('personal')">Personal</button>
+                        <button class="table-tab" onclick="filterTableColumns('laboral')">Institucional</button>
                     </div>
                 </div>
 
@@ -198,20 +247,51 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>RUT</th>
-                                <th>Nombre</th>
-                                <th>Email</th>
-                                <th>Banco</th>
-                                <th>Cuenta</th>
-                                <th>Talla</th>
-                                <th>Zapatos</th>
-                                <th>Estado</th>
+                                <th class="sticky-col">Acciones</th>
+                                <th onclick="sortTable('numReg')" class="sortable">N° REG <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('rut')" class="sortable">RUT <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('nombres')" class="sortable">Nombres <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('apellidoPaterno')" class="sortable">Ap. Paterno <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('apellidoMaterno')" class="sortable">Ap. Materno <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('comuna')" class="sortable">Comuna <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('numRegAnt')" class="sortable">Reg. Ant <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('fechaNacimiento')" class="sortable">F. Nac <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('edad')" class="sortable">Edad <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('estadoCivil')" class="sortable">Est. Civil <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('celular')" class="sortable">Celular <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('direccion')" class="sortable">Dirección <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('email')" class="sortable">Email <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('rbd')" class="sortable">RBD <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('anoIngresoPae')" class="sortable">Año PAE <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('hijosMenores')" class="sortable">H. Menores <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('hijosMayores')" class="sortable">H. Mayores <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('empresa')" class="sortable">Empresa <i
+                                        data-lucide="chevrons-up-down"></i></th>
+                                <th onclick="sortTable('estado')" class="sortable">Estado <i
+                                        data-lucide="chevrons-up-down"></i></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="sociasTableBody">
                             <tr>
-                                <td colspan="9" class="empty-state">No hay socias registradas</td>
+                                <td colspan="20" class="empty-state">No hay socias registradas</td>
                             </tr>
                         </tbody>
                     </table>
@@ -321,6 +401,146 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Reportes View -->
+            <div id="reportesView" class="view-content">
+                <div class="view-header">
+                    <h2>Reportes y Estadísticas</h2>
+                    <p class="subtitle">Generación de reportes masivos e individuales</p>
+                </div>
+
+                <div class="report-tabs">
+                    <button class="tab-btn active" onclick="switchReportTab('masivo')">Reporte Masivo</button>
+                    <button class="tab-btn" onclick="switchReportTab('individual')">Reporte Individual</button>
+                </div>
+
+                <!-- Masivo Tab -->
+                <div id="tab-masivo" class="report-tab-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Nómina Completa Consolidada</h3>
+                            <button class="btn-primary" onclick="exportReporteMasivo()">
+                                <i data-lucide="download"></i> Exportar CSV
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="tablaReporteMasivo">
+                                <thead>
+                                    <tr>
+                                        <th><i data-lucide="id-card"></i> RUT</th>
+                                        <th><i data-lucide="user"></i> Nombre Completo</th>
+                                        <th><i data-lucide="check-circle"></i> Asistencias</th>
+                                        <th><i data-lucide="clock"></i> Atrasos</th>
+                                        <th><i data-lucide="x-circle"></i> Inasistencias</th>
+                                        <th><i data-lucide="activity"></i> Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Individual Tab -->
+                <div id="tab-individual" class="report-tab-content" style="display: none;">
+                    <div class="search-bar">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchReporteIndividual" placeholder="Buscar socia por RUT o nombre..."
+                            onkeyup="searchSociaForReport()">
+                    </div>
+
+                    <div id="reporteIndividualResult" class="reporte-individual-card" style="display: none;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+            <!-- Generar Documentos View -->
+            <div id="generarDocumentosView" class="view-content">
+                <div class="view-header">
+                    <h2>Generación de Documentos</h2>
+                    <p class="subtitle">Descarga de plantillas, certificados y convenios</p>
+                </div>
+
+                <div class="documents-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+
+                    <!-- Card 1: CSV Template -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="file-spreadsheet" style="color: #10B981;"></i> Plantilla Socias
+                        </h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1.5rem;">Descarga el formato CSV correcto para
+                            importar socias masivamente.</p>
+                        <button class="btn-primary" style="width: 100%;" onclick="downloadCSVTemplate()">
+                            <i data-lucide="download"></i> Descargar CSV
+                        </button>
+                    </div>
+
+                    <!-- Card 2: Certificate -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="award" style="color: #F59E0B;"></i> Certificado de Socia
+                        </h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1rem;">Genera un certificado de afiliación para
+                            una socia.</p>
+
+                        <div class="form-group">
+                            <label>Seleccionar Socia</label>
+                            <div class="input-group">
+                                <input type="text" id="certSociaRut" placeholder="Buscar por RUT..."
+                                    oninput="searchSociaForCert(this.value)">
+                                <button class="btn-secondary"><i data-lucide="search"></i></button>
+                            </div>
+                            <div id="certSociaResults" class="search-results"
+                                style="display:none; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; position: absolute; background: white; width: 100%; z-index: 10;">
+                            </div>
+                            <input type="hidden" id="certSelectedSocia">
+                            <p id="certSelectedName"
+                                style="font-weight: bold; margin-top: 0.5rem; color: var(--primary-blue);"></p>
+                        </div>
+
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;"
+                            onclick="generateCertificate()">
+                            <i data-lucide="printer"></i> Generar Certificado
+                        </button>
+                    </div>
+
+                    <!-- Card 3: Agreement -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="file-signature" style="color: #6366F1;"></i> Documento de Convenio
+                        </h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1rem;">Crea un documento de compromiso de pago.
+                        </p>
+
+                        <div class="form-group">
+                            <label>Nombre Socia</label>
+                            <input type="text" id="convSocia" placeholder="Ej: María González">
+                        </div>
+                        <div class="form-group">
+                            <label>Comercio / Entidad</label>
+                            <input type="text" id="convComercio" placeholder="Ej: Farmacia Cruz Verde">
+                        </div>
+                        <div class="form-group" style="display: flex; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <label>Monto</label>
+                                <input type="number" id="convMonto" placeholder="50000">
+                            </div>
+                            <div style="flex: 1;">
+                                <label>Cuotas</label>
+                                <input type="number" id="convCuotas" placeholder="3">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="generateConvenio()">
+                            <i data-lucide="file-text"></i> Generar Convenio
+                        </button>
+                    </div>
+
+                </div>
+            </div>
         </main>
     </div>
 
@@ -369,69 +589,15 @@
                 </button>
             </div>
             <form id="nuevaSociaForm">
+                <p style="color: var(--gray-600); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                    <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle;"></i>
+                    Solo el RUT es obligatorio. Los demás datos pueden completarse después en la nómina de socias.
+                </p>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="sociaRut">RUT *</label>
-                        <input type="text" id="sociaRut" placeholder="12.345.678-9" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="sociaNombres">Nombres *</label>
-                        <input type="text" id="sociaNombres" placeholder="María José" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sociaApellidoPaterno">Apellido Paterno *</label>
-                        <input type="text" id="sociaApellidoPaterno" placeholder="González" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="sociaApellidoMaterno">Apellido Materno *</label>
-                        <input type="text" id="sociaApellidoMaterno" placeholder="Silva" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sociaEmail">Email *</label>
-                        <input type="email" id="sociaEmail" placeholder="maria@email.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="sociaEstado">Estado</label>
-                        <select id="sociaEstado">
-                            <option value="Activo">Activo</option>
-                            <option value="Inactivo">Inactivo</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sociaBanco">Banco</label>
-                        <input type="text" id="sociaBanco" placeholder="Banco de Chile">
-                    </div>
-                    <div class="form-group">
-                        <label for="sociaCuenta">Número de Cuenta</label>
-                        <input type="text" id="sociaCuenta" placeholder="123456789">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sociaTalla">Talla</label>
-                        <select id="sociaTalla">
-                            <option value="">-- Seleccionar --</option>
-                            <option value="XS">XS</option>
-                            <option value="S">S</option>
-                            <option value="M">M</option>
-                            <option value="L">L</option>
-                            <option value="XL">XL</option>
-                            <option value="XXL">XXL</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="sociaZapatos">Talla Zapatos</label>
-                        <input type="number" id="sociaZapatos" placeholder="37" min="30" max="50">
+                        <input type="text" id="sociaRut" placeholder="12.345.678-9" required autofocus>
                     </div>
                 </div>
 
@@ -469,6 +635,32 @@
                     <p>El archivo debe contener las siguientes columnas:</p>
                     <code>RUT,Nombre,Email,Estado</code>
                     <p class="example">Ejemplo: 12345678-9,María González,maria@email.com,Activo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Enrolar (QR) -->
+    <div id="enrolarModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Enrolar Nuevo Usuario</h3>
+                <button class="btn-close" onclick="closeEnrolarModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="enrolar-body">
+                <p class="instruction-text">Escanea el código QR del carnet de identidad para autocompletar los datos.
+                </p>
+
+                <div id="enrolarReader"
+                    style="width: 100%; min-height: 300px; border-radius: 12px; overflow: hidden; margin-bottom: 1rem;">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEnrolarModal()">Cancelar</button>
+                    <button type="button" class="btn-ghost"
+                        onclick="closeEnrolarModal(); showNuevaSociaModal();">Entrada Manual</button>
                 </div>
             </div>
         </div>
@@ -516,10 +708,31 @@
         </div>
     </div>
 
+    <!-- AI Assistant Reminder Bubble -->
+    <div class="ai-reminder-bubble" id="aiReminderBubble" style="display: none;">
+        <button class="ai-bubble-close" onclick="closeAIBubble()">
+            <i data-lucide="x"></i>
+        </button>
+        <div class="ai-bubble-content">
+            <div onclick="toggleAIChat()" style="display:flex; align-items:center; gap:10px;">
+                <img src="https://ui-avatars.com/api/?name=Asistente+AI&background=random&gender=female" alt="AI Avatar"
+                    class="ai-avatar-small">
+                <div class="ai-text-content">
+                    <p class="ai-bubble-title">¡Hola!</p>
+                    <p class="ai-bubble-message">¿Necesitas ayuda?</p>
+                </div>
+            </div>
+            <button onclick="showEnrolarModal()" class="btn-xs btn-primary"
+                style="margin-left: 10px; padding: 4px 8px; font-size: 0.7rem;">
+                <i data-lucide="qr-code" style="width: 14px; height: 14px;"></i> Enrolar
+            </button>
+        </div>
+    </div>
+
     <!-- AI Assistant Chat -->
     <button class="ai-chat-button" id="aiChatButton" onclick="toggleAIChat()">
-        <i data-lucide="bot"></i>
-        <span class="ai-badge">IA</span>
+        <i data-lucide="sparkles"></i>
+        <div class="ai-badge">IA</div>
     </button>
 
     <div class="ai-chat-panel" id="aiChatPanel">
@@ -533,27 +746,21 @@
         <div class="ai-chat-messages" id="aiChatMessages">
             <div class="ai-message assistant">
                 <div class="message-content">
-                    ¡Hola! 👋 Soy tu asistente de IA. Puedo ayudarte a gestionar socias, buscar información y exportar
-                    datos a Google Drive. ¿En qué puedo ayudarte?
+                    ¡Hola! Soy <strong>Teresita</strong>, tu asistente virtual. Estoy aquí para ayudarte con la gestión
+                    de SINTRAMAE. ¿Qué necesitas hacer hoy?
                 </div>
             </div>
         </div>
 
         <div class="ai-quick-actions" id="aiQuickActions">
-            <button class="quick-action-chip" onclick="sendQuickAction('Busca una socia')">
-                <i data-lucide="search"></i> Buscar
+            <button class="quick-action-chip" onclick="sendQuickAction('Crear nueva reunión')">
+                <i data-lucide="calendar-plus"></i> Crear reunión
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Agrega una nueva socia')">
-                <i data-lucide="user-plus"></i> Agregar
+            <button class="quick-action-chip" onclick="sendQuickAction('Agregar nueva socia')">
+                <i data-lucide="user-plus"></i> Agregar nueva socia
             </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Actualizar datos')">
-                <i data-lucide="edit"></i> Actualizar Datos
-            </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('¿Cuántas socias tenemos?')">
-                <i data-lucide="bar-chart"></i> Estadísticas
-            </button>
-            <button class="quick-action-chip" onclick="sendQuickAction('Exporta a Google Sheets')">
-                <i data-lucide="cloud"></i> Exportar
+            <button class="quick-action-chip" onclick="sendQuickAction('Reporte individual')">
+                <i data-lucide="file-text"></i> Reporte
             </button>
         </div>
 
@@ -572,12 +779,155 @@
         </div>
     </div>
 
-    <script src="google-drive-integration.js"></script>
-    <script src="ai-assistant.js"></script>
-    <script src="admin.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <!-- Lazy Loader Utility -->
+    <script src="js/utils/lazy-loader.js"></script>
+
+    <!-- Error Handler (carga inmediata, es pequeño y crítico) -->
+    <script src="js/services/error-handler.js"></script>
+
+    <!-- Admin Core (carga inmediata) -->
+    <script>
+        const ts = new Date().getTime();
+        document.write('<script src="admin.js?v=' + ts + '"><\/script>');
+    </script>
+
+    <!-- Lazy Loading de módulos pesados -->
+    <script>
+        // Pre-cargar módulos en segundo plano cuando el navegador esté idle
+        if (typeof lazyLoader !== 'undefined') {
+            lazyLoader.preload([
+                { src: 'google-drive-integration.js', id: 'drive-integration' },
+                { src: 'ai-assistant.js', id: 'ai-assistant' }
+            ]);
+        }
+    </script>
+
     <script>
         lucide.createIcons();
     </script>
+
+    <!-- ✨ NUEVOS SERVICIOS ✨ -->
+    <script src="js/services/meeting-attendance.js"></script>
+    <script src="js/services/discount-manager.js"></script>
+
+    <!-- MODALES NUEVOS -->
+    <!-- Modal Nuevo Descuento -->
+    <div id="modalNuevoDescuento" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nuevo Descuento - <span id="descuentoSociaNombre"></span></h3>
+                <button class="btn-icon" onclick="document.getElementById('modalNuevoDescuento').style.display='none'">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="descuentoSociaRut">
+
+            <form onsubmit="event.preventDefault(); guardarNuevoDescuento();">
+                <div class="form-group">
+                    <label>Comercio/Entidad:</label>
+                    <input type="text" id="descuentoComercio" required class="form-control">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Monto Total:</label>
+                        <input type="number" id="descuentoMonto" required class="form-control" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Número de Cuotas:</label>
+                        <input type="number" id="descuentoCuotas" required class="form-control" min="1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha Inicio:</label>
+                    <input type="date" id="descuentoFecha" required class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>Observaciones:</label>
+                    <textarea id="descuentoObservaciones" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">
+                        <i data-lucide="save"></i> Guardar Descuento
+                    </button>
+                    <button type="button" class="btn-secondary"
+                        onclick="document.getElementById('modalNuevoDescuento').style.display='none'">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Estado Socia -->
+    <div id="modalEstadoSocia" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>Historial de Descuentos - <span id="estadoSociaNombre"></span></h3>
+                <button class="btn-icon" onclick="document.getElementById('modalEstadoSocia').style.display='none'">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="stat-card">
+                    <h4 id="estadoDeudaTotal">$0</h4>
+                    <p>Deuda Total Vigente</p>
+                </div>
+                <div class="stat-card">
+                    <h4 id="estadoDescuentosVigentes">0</h4>
+                    <p>Descuentos Activos</p>
+                </div>
+                <div class="stat-card">
+                    <h4 id="estadoDescuentosFinalizados">0</h4>
+                    <p>Descuentos Finalizados</p>
+                </div>
+            </div>
+
+            <h4>Historial Completo</h4>
+            <div id="historialDescuentosContainer"></div>
+        </div>
+    </div>
+
+    <!-- Modal Justificar Asistencia -->
+    <div id="modalJustificar" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Justificar Ausencia</h3>
+                <button class="btn-icon" onclick="document.getElementById('modalJustificar').style.display='none'">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="justificarMeetingId">
+            <input type="hidden" id="justificarSociaRut">
+
+            <p><strong>Socia:</strong> <span id="justificarSociaNombre"></span></p>
+
+            <div class="form-group">
+                <label>Motivo de la justificación:</label>
+                <textarea id="justificarMotivo" class="form-control" rows="4" required></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="guardarJustificacion()">
+                    <i data-lucide="check"></i> Guardar Justificación
+                </button>
+                <button class="btn-secondary" onclick="document.getElementById('modalJustificar').style.display='none'">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

@@ -1,6 +1,6 @@
 // ===================================
-// APP Asistencia - Main App Logic (Phase 3 - Simplified)
-// RUT validation and photo-based attendance
+// APP Asistencia - Main App Logic (Modernized with QR)
+// RUT validation, QR scanning, and photo-based attendance
 // ===================================
 
 // RUT Validation Functions
@@ -65,7 +65,7 @@ function getAsistencias() {
     return asistencias ? JSON.parse(asistencias) : [];
 }
 
-function saveAsistencia(rut, nombreCompleto, photoURL = null) {
+function saveAsistencia(rut, nombreCompleto, photoURL = null, meetingId = null) {
     const asistencias = getAsistencias();
     const now = new Date();
 
@@ -73,15 +73,39 @@ function saveAsistencia(rut, nombreCompleto, photoURL = null) {
         fecha: now.toLocaleDateString('es-CL'),
         hora: now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
         rut: rut,
-        nombreCompleto: nombreCompleto, // Store full name
+        nombreCompleto: nombreCompleto,
         photoURL: photoURL,
+        meetingId: meetingId, // Link to meeting if exists
         timestamp: now.toISOString()
     };
 
     asistencias.push(asistencia);
     localStorage.setItem('asistencias', JSON.stringify(asistencias));
 
+    // If linked to meeting, update meeting attendance matrix
+    if (meetingId) {
+        updateMeetingAttendance(meetingId, rut, 'Asistió', asistencia.hora);
+    }
+
     return asistencia;
+}
+
+// Update meeting attendance matrix
+function updateMeetingAttendance(meetingId, sociaRut, estado, hora) {
+    const meetings = JSON.parse(localStorage.getItem('meetings') || '[]');
+    const meeting = meetings.find(m => m.id === meetingId);
+
+    if (meeting) {
+        if (!meeting.asistencias) {
+            meeting.asistencias = {};
+        }
+        meeting.asistencias[sociaRut] = {
+            estado: estado,
+            hora: hora,
+            justificacion: null
+        };
+        localStorage.setItem('meetings', JSON.stringify(meetings));
+    }
 }
 
 function findUsuarioByRUT(rut) {
@@ -92,263 +116,202 @@ function findUsuarioByRUT(rut) {
 
 // Global variables
 let currentUser = null;
-let videoStream = null;
 
-// Registration Form Logic
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('registroForm');
+    // Only init if on registro page
+    if (!document.getElementById('registroForm')) return;
+
+    // Setup form listeners and numeric keypad
+    setupFormListeners();
+    setupNumericKeypad();
+});
+
+// Setup Numeric Keypad
+function setupNumericKeypad() {
+    const keypad = document.getElementById('numericKeypad');
+    if (!keypad) return;
+
     const rutInput = document.getElementById('rut');
-    const userInfo = document.getElementById('userInfo');
-    const userName = document.getElementById('userName');
-    const btnConfirmar = document.getElementById('btnConfirmar');
-    const errorMessage = document.getElementById('errorMessage');
 
-    if (!form) return;
+    keypad.addEventListener('click', (e) => {
+        const btn = e.target.closest('.key-btn');
+        if (!btn) return;
 
-    // Auto-focus RUT input for tablet
-    setTimeout(() => {
-        if (rutInput) {
-            rutInput.focus();
+        const key = btn.getAttribute('data-key');
+        let currentValue = rutInput.value.replace(/[^0-9kK]/g, ''); // Remove formatting
+
+        if (key === 'delete') {
+            // Remove last character
+            currentValue = currentValue.slice(0, -1);
+        } else if (currentValue.length < 9) {
+            // Add digit or K (max 9 characters: 8 digits + 1 DV)
+            currentValue += key;
         }
-    }, 300);
 
-    // Format RUT as user types
-    if (rutInput) {
-        rutInput.addEventListener('input', (e) => {
-            const cursorPos = e.target.selectionStart;
-            const oldValue = e.target.value;
-            const newValue = formatRUT(oldValue);
+        // Format and display RUT
+        rutInput.value = formatRUT(currentValue);
 
-            e.target.value = newValue;
+        // Validate and enable/disable confirm button
+        validateAndShowUser(rutInput.value);
 
-            if (newValue.length > oldValue.length) {
-                e.target.setSelectionRange(cursorPos + 1, cursorPos + 1);
-            }
-        });
+        // Recreate icons for delete button
+        lucide.createIcons();
+    });
+}
 
-        // Validate RUT on blur
-        rutInput.addEventListener('blur', () => {
-            const rut = rutInput.value;
 
-            if (!rut) {
-                hideError();
-                hideUserInfo();
-                return;
-            }
 
-            if (!validateRUT(rut)) {
-                showError('RUT inválido. Verifica el formato y dígito verificador.');
-                hideUserInfo();
-                btnConfirmar.disabled = true;
-                return;
-            }
+// Form Listeners
+function setupFormListeners() {
+    const form = document.getElementById('registroForm');
+    const btnConfirmar = document.getElementById('btnConfirmar');
 
-            const usuario = findUsuarioByRUT(rut);
-
-            if (!usuario) {
-                showError('Usuario no encontrado. Contacta al administrador.');
-                hideUserInfo();
-                btnConfirmar.disabled = true;
-                return;
-            }
-
-            if (usuario.estado !== 'Activo') {
-                showError('Usuario inactivo. Contacta al administrador.');
-                hideUserInfo();
-                btnConfirmar.disabled = true;
-                return;
-            }
-
-            hideError();
-            currentUser = usuario;
-            const nombreCompleto = `${usuario.nombres || usuario.nombre || ''} ${usuario.apellidoPaterno || ''} ${usuario.apellidoMaterno || ''}`.trim();
-            showUserInfo(nombreCompleto);
-            btnConfirmar.disabled = false;
-        });
-    }
-
-    // Form submission - Start photo capture
+    // Form submission
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-
         if (!currentUser) {
             showError('Error al validar usuario.');
             return;
         }
-
-        // Hide form, show photo capture
         form.style.display = 'none';
-        startPhotoCapture();
+
+        // Direct attendance confirmation - No Photo
+        const nombreCompleto = `${currentUser.nombres || currentUser.nombre || ''} ${currentUser.apellidoPaterno || ''} ${currentUser.apellidoMaterno || ''}`.trim();
+        const asistencia = saveAsistencia(currentUser.rut, nombreCompleto, null);
+
+        if (window.driveIntegration) {
+            window.driveIntegration.syncData().catch(console.error);
+        }
+
+        showResultModal('success', 'Socia registrada con éxito', `${nombreCompleto}, tu asistencia ha sido registrada a las ${asistencia.hora}`);
     });
+}
 
-    function showError(message) {
-        if (errorMessage) {
-            errorMessage.querySelector('span').textContent = message;
-            errorMessage.style.display = 'flex';
-            lucide.createIcons();
-        }
+function validateAndShowUser(rut) {
+    const btnConfirmar = document.getElementById('btnConfirmar');
+
+    if (!rut) {
+        hideError();
+        hideUserInfo();
+        return;
     }
 
-    function hideError() {
-        if (errorMessage) {
-            errorMessage.style.display = 'none';
-        }
+    if (!validateRUT(rut)) {
+        showError('RUT inválido. Verifica el formato y dígito verificador.');
+        hideUserInfo();
+        btnConfirmar.disabled = true;
+        return;
     }
 
-    function showUserInfo(nombre) {
-        if (userName && userInfo) {
-            userName.textContent = nombre;
-            userInfo.style.display = 'block';
-            lucide.createIcons();
-        }
+    const usuario = findUsuarioByRUT(rut);
+
+    if (!usuario) {
+        showResultModal('error', 'Socia no registrada', 'El RUT ingresado no corresponde a una socia activa en el sistema.', false);
+        hideUserInfo();
+        btnConfirmar.disabled = true;
+        return;
     }
 
-    function hideUserInfo() {
-        if (userInfo) {
-            userInfo.style.display = 'none';
-        }
+    if (usuario.estado !== 'Activo') {
+        showError('Usuario inactivo. Contacta al administrador.');
+        hideUserInfo();
+        btnConfirmar.disabled = true;
+        return;
     }
-});
 
-// Photo Capture Functions
-async function startPhotoCapture() {
-    const photoCaptureSection = document.getElementById('photoCaptureSection');
-    const video = document.getElementById('videoElement');
-    const btnCapturePhoto = document.getElementById('btnCapturePhoto');
+    hideError();
+    currentUser = usuario;
+    const nombreCompleto = `${usuario.nombres || usuario.nombre || ''} ${usuario.apellidoPaterno || ''} ${usuario.apellidoMaterno || ''}`.trim();
+    showUserInfo(nombreCompleto);
+    btnConfirmar.disabled = false;
+}
 
-    photoCaptureSection.style.display = 'block';
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: 'user'
-            }
-        });
-
-        video.srcObject = stream;
-        videoStream = stream;
-
-        video.onloadedmetadata = () => {
-            video.play();
-        };
-
+// UI Helpers
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    if (errorMessage) {
+        errorMessage.querySelector('span').textContent = message;
+        errorMessage.style.display = 'flex';
         lucide.createIcons();
-
-    } catch (error) {
-        console.error('Error accessing camera:', error);
-        alert('No se pudo acceder a la cámara. Verifica los permisos.');
-        resetToHome();
-    }
-
-    // Capture photo button
-    btnCapturePhoto.onclick = capturePhoto;
-}
-
-async function capturePhoto() {
-    const video = document.getElementById('videoElement');
-    const canvas = document.getElementById('photoCanvas');
-    const btnCapturePhoto = document.getElementById('btnCapturePhoto');
-
-    // Disable button during capture
-    btnCapturePhoto.disabled = true;
-
-    // Set canvas size to video size
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Draw video frame to canvas
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Convert canvas to blob
-    canvas.toBlob(async (blob) => {
-        // Stop video stream
-        stopCamera();
-
-        // Upload photo
-        await uploadPhoto(blob);
-
-    }, 'image/jpeg', 0.9);
-}
-
-function stopCamera() {
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
     }
 }
 
-async function uploadPhoto(photoBlob) {
-    const uploadProgress = document.getElementById('uploadProgress');
-    const progressFill = document.getElementById('progressFill');
-    const uploadStatus = document.getElementById('uploadStatus');
+function hideError() {
+    const errorMessage = document.getElementById('errorMessage');
+    if (errorMessage) {
+        errorMessage.style.display = 'none';
+    }
+}
 
-    uploadProgress.style.display = 'block';
+function showUserInfo(nombre) {
+    const userName = document.getElementById('userName');
+    const userInfo = document.getElementById('userInfo');
+    if (userName && userInfo) {
+        userName.textContent = nombre;
+        userInfo.style.display = 'block';
+        lucide.createIcons();
+    }
+}
 
-    try {
-        // Update progress
-        progressFill.style.width = '30%';
-        uploadStatus.textContent = 'Subiendo fotografía a Drive...';
+function hideUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) {
+        userInfo.style.display = 'none';
+    }
+}
 
-        // Upload to Google Drive
-        const result = await uploadPhotoToDrive(photoBlob, currentUser.rut, (progress) => {
-            progressFill.style.width = progress + '%';
-        });
 
-        let photoURL = null;
-        const nombreCompleto = `${currentUser.nombres || currentUser.nombre || ''} ${currentUser.apellidoPaterno || ''} ${currentUser.apellidoMaterno || ''}`.trim();
 
-        if (result.success) {
-            uploadStatus.textContent = 'Fotografía subida exitosamente';
-            photoURL = result.fileId ? `https://drive.google.com/file/d/${result.fileId}/view` : 'local';
-        } else {
-            // Fallback to local storage
-            uploadStatus.textContent = 'Guardando fotografía localmente...';
-            const localResult = savePhotoLocally(photoBlob, currentUser.rut);
-            photoURL = 'local';
+function showResultModal(type, title, messageText, redirect = true) {
+    const modal = document.getElementById('resultModal');
+    const resultIcon = document.getElementById('resultIcon');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultMessage = document.getElementById('resultMessage');
+    const redirectMsg = document.getElementById('redirectMessage');
+    const btnClose = document.getElementById('btnCloseModal');
+
+    resultTitle.textContent = title;
+    resultMessage.textContent = messageText;
+
+    // Reset classes
+    const iconContainer = document.getElementById('resultIconContainer');
+    iconContainer.className = '';
+
+    if (type === 'success') {
+        iconContainer.classList.add('success-icon');
+        resultIcon.setAttribute('data-lucide', 'check-circle');
+        redirectMsg.style.display = 'block';
+        btnClose.style.display = 'none';
+
+        if (redirect) {
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
         }
+        createConfetti();
+    } else {
+        iconContainer.classList.add('error-icon'); // Will need CSS for this
+        resultIcon.setAttribute('data-lucide', 'x-circle');
+        redirectMsg.style.display = 'none';
+        btnClose.style.display = 'block'; // Show close button for errors
 
-        // Save attendance
-        const asistencia = saveAsistencia(currentUser.rut, nombreCompleto, photoURL);
-
-        // Show success and redirect
-        showSuccessAndRedirect(nombreCompleto, asistencia.hora);
-
-    } catch (error) {
-        console.error('Error uploading photo:', error);
-
-        // Fallback to local
-        const localResult = savePhotoLocally(photoBlob, currentUser.rut);
-        const nombreCompleto = `${currentUser.nombres || currentUser.nombre || ''} ${currentUser.apellidoPaterno || ''} ${currentUser.apellidoMaterno || ''}`.trim();
-        const asistencia = saveAsistencia(currentUser.rut, nombreCompleto, 'local');
-
-        showSuccessAndRedirect(nombreCompleto, asistencia.hora);
+        // Ensure error styling is applied (can add inline or class)
+        iconContainer.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
     }
+
+    modal.style.display = 'flex';
+    lucide.createIcons();
 }
 
-function showSuccessAndRedirect(nombre, hora) {
-    const modal = document.getElementById('successModal');
-    const message = document.getElementById('successMessage');
-
-    message.textContent = `${nombre}, tu asistencia ha sido registrada a las ${hora}`;
-    modal.style.display = 'flex';
-
-    lucide.createIcons();
-    createConfetti();
-
-    // Auto-redirect after 3 seconds
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 3000);
+function closeResultModal() {
+    document.getElementById('resultModal').style.display = 'none';
 }
 
 function resetToHome() {
     window.location.href = 'index.html';
 }
 
-// Confetti animation
 function createConfetti() {
     const colors = ['#667eea', '#764ba2', '#10B981', '#F59E0B', '#EC4899'];
     const confettiCount = 50;

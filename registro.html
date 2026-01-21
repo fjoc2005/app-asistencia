@@ -10,7 +10,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <script src="version-control.js"></script>
+    <script>
+        document.write('<link rel="stylesheet" href="styles.css?v=' + new Date().getTime() + '">');
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -22,65 +25,60 @@
                     <i data-lucide="user-check"></i>
                 </div>
                 <h2>Registro de Asistencia</h2>
-                <p id="headerText">Ingresa tu RUT para registrar tu asistencia</p>
+                <p>Ingresa tu RUT para registrar asistencia</p>
             </div>
 
-            <!-- RUT Input Section -->
+            <!-- RUT Input Section with Numeric Keypad -->
             <form id="registroForm" class="registro-form">
                 <div class="form-group">
                     <label for="rut">
                         <i data-lucide="id-card"></i>
                         RUT
                     </label>
-                    <input type="text" id="rut" name="rut" placeholder="12.345.678-9" required maxlength="12"
-                        autocomplete="off" autofocus>
-                    <small class="input-hint">Formato: 12.345.678-9</small>
-                </div>
-
-                <div id="userInfo" class="user-info" style="display: none;">
-                    <div class="user-card">
-                        <i data-lucide="user" class="user-icon"></i>
-                        <div class="user-details">
-                            <span class="user-label">Nombre:</span>
-                            <span id="userName" class="user-name"></span>
-                        </div>
+                    <div class="input-group">
+                        <input type="text" id="rut" name="rut" placeholder="12345678-9" maxlength="12"
+                            autocomplete="off" readonly>
                     </div>
+                    <small class="input-hint">Usa el teclado numérico para ingresar tu RUT</small>
                 </div>
 
-                <div id="errorMessage" class="error-message" style="display: none;">
-                    <i data-lucide="alert-circle"></i>
-                    <span></span>
-                </div>
-
-                <button type="submit" class="btn-success btn-confirmar" id="btnConfirmar" disabled>
-                    <i data-lucide="camera"></i>
-                    TOMAR FOTOGRAFÍA
-                </button>
-            </form>
-
-            <!-- Photo Capture Section -->
-            <div id="photoCaptureSection" class="photo-capture-section" style="display: none;">
-                <h3>Toma tu fotografía</h3>
-                <p>Posiciónate frente a la cámara</p>
-
-                <div class="camera-container">
-                    <video id="videoElement" autoplay muted playsinline></video>
-                    <canvas id="photoCanvas" style="display: none;"></canvas>
-                </div>
-
-                <div class="photo-actions">
-                    <button type="button" class="btn-primary btn-large" id="btnCapturePhoto">
-                        <i data-lucide="camera"></i>
-                        Capturar Foto
+                <!-- Numeric Keypad -->
+                <div class="numeric-keypad" id="numericKeypad">
+                    <button type="button" class="key-btn" data-key="1">1</button>
+                    <button type="button" class="key-btn" data-key="2">2</button>
+                    <button type="button" class="key-btn" data-key="3">3</button>
+                    <button type="button" class="key-btn" data-key="4">4</button>
+                    <button type="button" class="key-btn" data-key="5">5</button>
+                    <button type="button" class="key-btn" data-key="6">6</button>
+                    <button type="button" class="key-btn" data-key="7">7</button>
+                    <button type="button" class="key-btn" data-key="8">8</button>
+                    <button type="button" class="key-btn" data-key="9">9</button>
+                    <button type="button" class="key-btn key-k" data-key="K">K</button>
+                    <button type="button" class="key-btn" data-key="0">0</button>
+                    <button type="button" class="key-btn key-delete" data-key="delete">
+                        <i data-lucide="delete"></i>
                     </button>
                 </div>
 
-                <div id="uploadProgress" class="upload-progress" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                <button type="submit" class="btn-success btn-confirmar" id="btnConfirmar" disabled>
+                    <i data-lucide="check-circle"></i>
+                    CONFIRMAR ASISTENCIA
+                </button>
+            </form>
+
+            <div id="userInfo" class="user-info" style="display: none;">
+                <div class="user-card">
+                    <i data-lucide="user" class="user-icon"></i>
+                    <div class="user-details">
+                        <span class="user-label">Nombre:</span>
+                        <span id="userName" class="user-name"></span>
                     </div>
-                    <p id="uploadStatus">Subiendo fotografía...</p>
                 </div>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i data-lucide="alert-circle"></i>
+                <span></span>
             </div>
 
             <div class="registro-footer">
@@ -88,19 +86,24 @@
                     <i data-lucide="arrow-left"></i>
                     Volver al inicio
                 </a>
+                <div class="branding-footer">
+                    Desarrollado para <strong>Sintramae</strong>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal" style="display: none;">
-        <div class="modal-content success-animation">
-            <div class="success-icon">
-                <i data-lucide="check-circle"></i>
+    <!-- Result Modal (Success/Error) -->
+    <div id="resultModal" class="modal" style="display: none;">
+        <div class="modal-content animate-scale-in">
+            <div id="resultIconContainer" class="success-icon">
+                <i id="resultIcon" data-lucide="check-circle"></i>
             </div>
-            <h3>¡Asistencia Registrada!</h3>
-            <p id="successMessage"></p>
-            <p class="redirect-message">Redirigiendo al inicio...</p>
+            <h3 id="resultTitle">¡Asistencia Registrada!</h3>
+            <p id="resultMessage"></p>
+            <p class="redirect-message" id="redirectMessage">Redirigiendo al inicio...</p>
+            <button id="btnCloseModal" class="btn-secondary" style="margin-top: 1rem; display: none;"
+                onclick="closeResultModal()">Cerrar</button>
         </div>
     </div>
 
@@ -109,9 +112,12 @@
         <div class="circle circle-2"></div>
     </div>
 
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://apis.google.com/js/api.js"></script>
-    <script src="google-drive.js"></script>
-    <script src="app.js"></script>
+    <!-- google-drive.js removed -->
+    <script>
+        document.write('<script src="app.js?v=' + new Date().getTime() + '"><\/script>');
+    </script>
     <script>
         lucide.createIcons();
     </script>
