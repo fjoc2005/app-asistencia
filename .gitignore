@@ -10,6 +10,9 @@ Desktop.ini
 .vscode/
 .idea/
 
+# Backups
+*.backup
+
 # Node modules (if we add package.json later)
 node_modules/
 

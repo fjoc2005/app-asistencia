@@ -56,12 +56,13 @@ if (document.querySelector('.admin-page')) {
     loadSocias();
     loadMeetings();
     loadAttendanceMatrix();
-    loadDescuentos();
+    loadJustificacionesSelects();
+    loadJustificacionesTable();
     setupEventListeners();
 
     // Load data from Drive if signed in
     setTimeout(async () => {
-        if (driveIntegration && driveIntegration.isSignedIn) {
+        if (typeof driveIntegration !== 'undefined' && driveIntegration && driveIntegration.isSignedIn) {
             const loaded = await driveIntegration.loadAllFromDrive();
             if (loaded) {
                 // Refresh views with newly loaded data
@@ -69,7 +70,8 @@ if (document.querySelector('.admin-page')) {
                 loadSocias();
                 loadMeetings();
                 loadAttendanceMatrix();
-                loadDescuentos();
+                loadJustificacionesSelects();
+                loadJustificacionesTable();
             }
         }
     }, 2000);
@@ -251,120 +253,49 @@ function saveDiscount(sociaRut, convenioActivo, observacion) {
 // Dashboard initialization
 function initializeDashboard() {
     const socias = getSocias();
-    const asistencias = getAsistencias();
     const meetings = getMeetings();
+    const records = getAttendanceRecords();
+
     const today = new Date().toLocaleDateString('es-CL');
 
     const totalSocias = socias.length;
-    const asistenciasHoy = asistencias.filter(a => a.fecha === today).length;
     const reunionesActivas = meetings.filter(m => m.estado === 'Activa').length;
 
-    document.getElementById('totalSocias').textContent = totalSocias;
-    document.getElementById('asistenciasHoy').textContent = asistenciasHoy;
-    document.getElementById('totalReuniones').textContent = reunionesActivas;
+    // Asistencias Hoy
+    const asistenciasHoy = Object.values(records).filter(r => {
+        const date = new Date(r.timestamp).toLocaleDateString('es-CL');
+        return date === today && r.status === 'asistio';
+    }).length;
+
+    // Asistencia Promedio Global
+    let totalAsistencias = 0;
+    Object.values(records).forEach(r => {
+        if (r.status === 'asistio') totalAsistencias++;
+    });
+
+    const totalPosibles = totalSocias * meetings.length;
+    const asistenciaPromedio = totalPosibles > 0 ? Math.round((totalAsistencias / totalPosibles) * 100) : 0;
+
+    const totalSociasEl = document.getElementById('totalSocias');
+    const asistenciasHoyEl = document.getElementById('asistenciasHoy');
+    const totalReunionesEl = document.getElementById('totalReuniones');
+    const asistenciaPromedioEl = document.getElementById('asistenciaPromedio');
+
+    if (totalSociasEl) totalSociasEl.textContent = totalSocias;
+    if (asistenciasHoyEl) asistenciasHoyEl.textContent = asistenciasHoy;
+    if (totalReunionesEl) totalReunionesEl.textContent = reunionesActivas;
+    if (asistenciaPromedioEl) asistenciaPromedioEl.textContent = asistenciaPromedio + '%';
 
     loadRecentActivity();
-    loadDashboardCalendar();
-}
-
-async function loadDashboardCalendar() {
-    const calendarEl = document.getElementById('dashboard-calendar');
-    if (!calendarEl) return;
-
-    let events = [];
-
-    // 1. Local Meetings
-    const localMeetings = getMeetings();
-    localMeetings.forEach(m => {
-        if (m.habilitada !== false) {
-            events.push({
-                title: `📌 ${m.nombre}`,
-                start: m.fecha + (m.hora ? `T${m.hora}` : ''),
-                color: '#10b981', // Emerald
-                extendedProps: { type: 'local' }
-            });
-        }
-    });
-
-    // 2. Chilean Holidays (2024-2025)
-    const holidays = [
-        { title: 'Año Nuevo', date: '2024-01-01' },
-        { title: 'Viernes Santo', date: '2024-03-29' },
-        { title: 'Sábado Santo', date: '2024-03-30' },
-        { title: 'Día del Trabajo', date: '2024-05-01' },
-        { title: 'Glorias Navales', date: '2024-05-21' },
-        { title: 'San Pedro y San Pablo', date: '2024-06-29' },
-        { title: 'Asunción de la Virgen', date: '2024-08-15' },
-        { title: 'Fiestas Patrias', date: '2024-09-18' },
-        { title: 'Glorias del Ejército', date: '2024-09-19' },
-        { title: 'Encuentro de Dos Mundos', date: '2024-10-12' },
-        { title: 'Día de las Iglesias Evangélicas', date: '2024-10-31' },
-        { title: 'Día de Todos los Santos', date: '2024-11-01' },
-        { title: 'Inmaculada Concepción', date: '2024-12-08' },
-        { title: 'Navidad', date: '2024-12-25' },
-        { title: 'Año Nuevo', date: '2025-01-01' }
-    ];
-
-    holidays.forEach(h => {
-        events.push({
-            title: `🇨🇱 ${h.title}`,
-            start: h.date,
-            allDay: true,
-            color: '#f43f5e', // Rose
-            display: 'block'
-        });
-    });
-
-    // 3. Google Calendar Events
-    if (driveIntegration && driveIntegration.isSignedIn) {
-        try {
-            const response = await gapi.client.calendar.events.list({
-                'calendarId': 'primary',
-                'timeMin': (new Date()).toISOString(),
-                'showDeleted': false,
-                'singleEvents': true,
-                'maxResults': 15,
-                'orderBy': 'startTime'
-            });
-            const driveEvents = response.result.items || [];
-            driveEvents.forEach(e => {
-                events.push({
-                    title: `☁️ ${e.summary}`,
-                    start: e.start.dateTime || e.start.date,
-                    end: e.end.dateTime || e.end.date,
-                    url: e.htmlLink,
-                    color: '#3b82f6' // Blue
-                });
-            });
-        } catch (error) {
-            console.error('Error fetching events for dashboard:', error);
-        }
-    }
-
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'es',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
-        },
-        events: events,
-        eventClick: function (info) {
-            if (info.event.url) {
-                window.open(info.event.url, '_blank');
-                info.jsEvent.preventDefault();
-            }
-        },
-        height: 'auto'
-    });
-    calendar.render();
 }
 
 function loadRecentActivity() {
-    const asistencias = getAsistencias();
-    const recent = asistencias.slice(-10).reverse();
+    const records = getAttendanceRecords();
+    const socias = getSocias();
+    const recent = Object.values(records).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
     const container = document.getElementById('recentActivityList');
+
+    if (!container) return;
 
     if (recent.length === 0) {
         container.innerHTML = '<p class="empty-state">No hay actividad reciente</p>';
@@ -372,12 +303,19 @@ function loadRecentActivity() {
     }
 
     container.innerHTML = recent.map(a => {
-        // Support both old and new format
-        const nombreCompleto = a.nombreCompleto || a.nombre || `${a.nombres || ''} ${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''}`.trim();
+        const socia = socias.find(s => cleanRUT(s.rut) === cleanRUT(a.sociaRut));
+        const nombreCompleto = socia ? `${socia.nombres} ${socia.apellidoPaterno}` : a.sociaRut;
+        const date = new Date(a.timestamp).toLocaleString('es-CL');
+
+        let statusText = '';
+        if (a.status === 'asistio') statusText = 'registró <span class="badge-asistio">Asistencia</span>';
+        else if (a.status === 'no-asistio') statusText = 'marcada como <span class="badge-no-asistio">Ausente</span>';
+        else if (a.status === 'justifico') statusText = 'registró <span class="badge-justifico">Justificación</span>';
+
         return `
             <div class="activity-item">
-                <span><strong>${nombreCompleto}</strong> registró asistencia</span>
-                <span class="activity-time">${a.fecha} ${a.hora}</span>
+                <span><strong>${nombreCompleto}</strong> ${statusText}</span>
+                <span class="activity-time">${date}</span>
             </div>
         `;
     }).join('');
@@ -427,6 +365,8 @@ function loadAttendanceMatrix() {
     const records = getAttendanceRecords();
 
     const matrix = document.getElementById('attendanceMatrix');
+    if (!matrix) return;
+
     const thead = matrix.querySelector('thead tr');
     const tbody = document.getElementById('matrixBody');
 
@@ -435,37 +375,57 @@ function loadAttendanceMatrix() {
         return;
     }
 
-    // Build header with meeting names
+    // Build header with meeting names + Percentage
     thead.innerHTML = '<th class="sticky-col">Socia</th>' +
-        meetings.map(m => `<th class="meeting-col" title="${m.descripcion || ''}">${m.nombre}<br><small>${m.fecha}</small></th>`).join('');
+        meetings.map(m => `<th class="meeting-col" title="${m.descripcion || ''}">${m.nombre}<br><small>${m.fecha}</small></th>`).join('') +
+        '<th class="stats-col">% Asist.</th>';
 
     // Build rows for each socia
     tbody.innerHTML = socias.map(socia => {
         const nombreCompleto = `${socia.nombres || socia.nombre || ''} ${socia.apellidoPaterno || ''} ${socia.apellidoMaterno || ''}`.trim();
+
+        let asistencias = 0;
+        let totalValidas = 0;
+
         const cells = meetings.map(meeting => {
             const key = `${socia.rut}_${meeting.id}`;
             const record = records[key];
 
             let cellClass = 'attendance-cell';
-            let cellContent = '-';
+            let cellContent = '<i data-lucide="minus" class="icon-pending"></i>';
 
             if (record) {
+                totalValidas++;
                 if (record.status === 'asistio') {
                     cellClass += ' asistio';
-                    cellContent = '✓';
+                    cellContent = '🟢';
+                    asistencias++;
                 } else if (record.status === 'no-asistio') {
                     cellClass += ' no-asistio';
-                    cellContent = '✗';
+                    cellContent = '🔴';
                 } else if (record.status === 'justifico') {
                     cellClass += ' justifico';
-                    cellContent = 'J';
+                    cellContent = '🟡';
                 }
             }
 
             return `<td class="${cellClass}" onclick="editAttendance('${socia.rut}', '${meeting.id}')" title="Click para editar">${cellContent}</td>`;
         }).join('');
 
-        return `<tr><td class="sticky-col socia-name">${nombreCompleto}</td>${cells}</tr>`;
+        const porcentaje = meetings.length > 0 ? Math.round((asistencias / meetings.length) * 100) : 0;
+        const porcentajeClass = porcentaje >= 75 ? 'pct-high' : porcentaje >= 50 ? 'pct-med' : 'pct-low';
+
+        return `
+            <tr>
+                <td class="sticky-col socia-name">
+                    <div class="socia-info-cell">
+                        <strong>${nombreCompleto}</strong>
+                        <small>${socia.rut}</small>
+                    </div>
+                </td>
+                ${cells}
+                <td class="stats-pct ${porcentajeClass}"><strong>${porcentaje}%</strong></td>
+            </tr>`;
     }).join('');
 
     lucide.createIcons();
@@ -881,6 +841,10 @@ function setupEventListeners() {
             e.preventDefault();
 
             const rut = document.getElementById('sociaRut').value;
+            const nombres = document.getElementById('sociaNombres').value;
+            const apellidoPaterno = document.getElementById('sociaApellidoPaterno').value;
+            const apellidoMaterno = document.getElementById('sociaApellidoMaterno').value;
+            const telefono = document.getElementById('sociaTelefono').value;
 
             if (!validateRUT(rut)) {
                 alert('RUT inválido. Por favor verifica el formato.');
@@ -893,19 +857,19 @@ function setupEventListeners() {
                 return;
             }
 
-            // Create socia with only RUT - all other fields will be filled in the dashboard
             const socia = {
                 rut: formatRUT(rut),
-                numReg: '',
-                nombres: '',
-                apellidoPaterno: '',
-                apellidoMaterno: '',
+                numReg: (socias.length + 1).toString().padStart(3, '0'),
+                nombres: nombres || '',
+                apellidoPaterno: apellidoPaterno || '',
+                apellidoMaterno: apellidoMaterno || '',
                 comuna: '',
                 numRegAnt: '',
                 fechaNacimiento: '',
                 edad: '',
                 estadoCivil: '',
-                celular: '',
+                celular: telefono || '',
+                telefono: telefono || '',
                 direccion: '',
                 email: '',
                 estado: 'Activo',
@@ -921,8 +885,9 @@ function setupEventListeners() {
             loadSocias();
             loadAttendanceMatrix();
             initializeDashboard();
+            loadJustificacionesSelects(); // Update selects for justifications
 
-            alert(`✅ Socia registrada con RUT ${formatRUT(rut)}.\n\nPuedes completar los demás datos en la sección "Nómina de Socias".`);
+            alert(`✅ Socia registrada: ${nombres} ${apellidoPaterno}`);
 
             closeModal('nuevaSociaModal');
             nuevaSociaForm.reset();
@@ -1088,14 +1053,145 @@ function getSocias() {
     return getUsuarios();
 }
 
-function getMeetings() {
-    const meetings = localStorage.getItem('meetings');
-    return meetings ? JSON.parse(meetings) : [];
+// ===================================
+// Justificaciones Logic
+// ===================================
+
+function loadJustificacionesSelects() {
+    const sociaSelect = document.getElementById('justSociaSelect');
+    const reunionSelect = document.getElementById('justReunionSelect');
+
+    if (!sociaSelect || !reunionSelect) return;
+
+    const socias = getSocias();
+    const meetings = getMeetings();
+
+    sociaSelect.innerHTML = '<option value="">-- Seleccionar socia --</option>' +
+        socias.map(s => `<option value="${s.rut}">${s.nombres} ${s.apellidoPaterno} (${s.rut})</option>`).join('');
+
+    reunionSelect.innerHTML = '<option value="">-- Seleccionar reunión --</option>' +
+        meetings.map(m => `<option value="${m.id}">${m.nombre} (${m.fecha})</option>`).join('');
 }
 
-function getAttendanceRecords() {
-    const records = localStorage.getItem('attendanceRecords');
-    return records ? JSON.parse(records) : {};
+function guardarJustificacion() {
+    const rut = document.getElementById('justSociaSelect').value;
+    const meetingId = document.getElementById('justReunionSelect').value;
+    const motivo = document.getElementById('justMotivo').value;
+
+    if (!rut || !meetingId || !motivo) {
+        alert('Por favor completa todos los campos.');
+        return;
+    }
+
+    saveAttendanceRecord(rut, meetingId, 'justifico', motivo);
+
+    // Update tables
+    loadAttendanceMatrix();
+    loadJustificacionesTable();
+    limpiarFormularioJustificacion();
+
+    alert('✅ Justificación guardada exitosamente.');
+}
+
+function limpiarFormularioJustificacion() {
+    document.getElementById('justSociaSelect').value = '';
+    document.getElementById('justReunionSelect').value = '';
+    document.getElementById('justMotivo').value = '';
+}
+
+function loadJustificacionesTable() {
+    const tbody = document.getElementById('justificacionesTableBody');
+    if (!tbody) return;
+
+    const socias = getSocias();
+    const meetings = getMeetings();
+    const records = getAttendanceRecords();
+
+    const justificaciones = [];
+    Object.values(records).forEach(record => {
+        if (record.status === 'justifico') {
+            const socia = socias.find(s => cleanRUT(s.rut) === cleanRUT(record.sociaRut));
+            const meeting = meetings.find(m => m.id === record.meetingId);
+
+            if (socia && meeting) {
+                justificaciones.push({
+                    socia: `${socia.nombres} ${socia.apellidoPaterno}`,
+                    meeting: meeting.nombre,
+                    fecha: meeting.fecha,
+                    motivo: record.justification,
+                    id: `${record.sociaRut}_${record.meetingId}`
+                });
+            }
+        }
+    });
+
+    if (justificaciones.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay justificaciones registradas</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = justificaciones.map(j => `
+        <tr>
+            <td>${j.socia}</td>
+            <td>${j.meeting}</td>
+            <td>${j.fecha}</td>
+            <td>${j.motivo}</td>
+            <td>
+                <button class="btn-icon" onclick="eliminarJustificacion('${j.id}')" title="Eliminar">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    lucide.createIcons();
+}
+
+function eliminarJustificacion(id) {
+    if (!confirm('¿Estás seguro de eliminar esta justificación?')) return;
+
+    const records = getAttendanceRecords();
+    delete records[id];
+    localStorage.setItem('attendanceRecords', JSON.stringify(records));
+
+    loadAttendanceMatrix();
+    loadJustificacionesTable();
+}
+
+// ===================================
+// Integration with new modules
+// ===================================
+
+// PDF Generation
+async function exportMeetingReport(meetingId) {
+    if (typeof generateMeetingReport === 'function') {
+        await generateMeetingReport(meetingId);
+    } else {
+        // Fallback to basic CSV if module not loaded
+        basicCSVExport(meetingId);
+    }
+}
+
+function basicCSVExport(meetingId) {
+    const meetings = getMeetings();
+    const meeting = meetings.find(m => m.id === meetingId);
+    if (!meeting) return;
+
+    const socias = getSocias();
+    const records = getAttendanceRecords();
+
+    const headers = ['RUT', 'Nombre', 'Estado', 'Justificación'];
+    const rows = socias.map(s => {
+        const record = records[`${s.rut}_${meetingId}`] || { status: 'Pendiente', justification: '' };
+        return [s.rut, `${s.nombres} ${s.apellidoPaterno}`, record.status, record.justification || ''];
+    });
+
+    const csvContent = "\uFEFF" + [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `reporte_${meeting.nombre.replace(/\s+/g, '_')}.csv`;
+    link.click();
 }
 
 function getDiscounts() {
@@ -1504,10 +1600,8 @@ window.showView = function (viewId) {
         dashboard: 'Dashboard',
         controlAsistencia: 'Control de Asistencia',
         nominaSocias: 'Nómina de Socias',
-        descuentos: 'Gestión de Descuentos',
-        vinculacion: 'Vinculación de Cuentas',
-        reportes: 'Reportes y Estadísticas',
-        generarDocumentos: 'Generación de Documentos'
+        justificaciones: 'Justificaciones',
+        vinculacion: 'Vinculación'
     };
     const titleEl = document.getElementById('viewTitle');
     if (titleEl && titles[targetId]) titleEl.textContent = titles[targetId];

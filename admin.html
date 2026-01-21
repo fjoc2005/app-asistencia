@@ -53,21 +53,13 @@
                     <i data-lucide="users"></i>
                     <span class="nav-text">Nómina de Socias</span>
                 </a>
-                <a href="#descuentos" class="nav-item" onclick="showView('descuentos')">
-                    <i data-lucide="percent"></i>
-                    <span class="nav-text">Descuentos</span>
-                </a>
-                <a href="#reportes" class="nav-item" onclick="showView('reportes')">
+                <a href="#justificaciones" class="nav-item" onclick="showView('justificaciones')">
                     <i data-lucide="file-text"></i>
-                    <span class="nav-text">Reportes</span>
+                    <span class="nav-text">Justificaciones</span>
                 </a>
                 <a href="#vinculacion" class="nav-item" onclick="showView('vinculacion')">
                     <i data-lucide="cloud"></i>
-                    <span class="nav-text">Vinculación de Cuentas</span>
-                </a>
-                <a href="#generar-documentos" class="nav-item" onclick="showView('generarDocumentos')">
-                    <i data-lucide="file-check"></i>
-                    <span class="nav-text">Documentos</span>
+                    <span class="nav-text">Vinculación</span>
                 </a>
             </nav>
 
@@ -136,17 +128,19 @@
                         </div>
                     </div>
 
-                    <!-- Card Removed -->
+                    <div class="stat-card animate-scale-in" style="animation-delay: 0.4s;">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="asistenciaPromedio">0%</h3>
+                            <p>Asistencia Promedio</p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Calendar Section -->
-                <div class="calendar-section animate-scale-in" style="animation-delay: 0.5s; margin: 2rem 0;">
-                    <h2>Próximos Eventos</h2>
-                    <div id="dashboard-calendar"></div>
-                </div>
-
-                <div class="recent-activity">
-                    <h2>Actividad Reciente</h2>
+                <div class="recent-activity" style="margin-top: 2rem;">
+                    <h2><i data-lucide="activity"></i> Actividad Reciente</h2>
                     <div id="recentActivityList" class="activity-list">
                         <p class="empty-state">No hay actividad reciente</p>
                     </div>
@@ -214,8 +208,13 @@
                     </div>
                     <div class="header-actions">
                         <button class="btn-secondary" onclick="showImportarModal()">
-                            <i data-lucide="upload"></i>
-                            Importar CSV
+                            <i data-lucide="file-spreadsheet"></i>
+                            Importar Excel
+                        </button>
+                        <button class="btn-secondary" onclick="showVoiceAssistantModal()"
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
+                            <i data-lucide="mic"></i>
+                            Agregar por Voz
                         </button>
                         <button class="btn-danger" onclick="deleteAllSocias()">
                             <i data-lucide="trash-2"></i>
@@ -375,170 +374,66 @@
                 </div>
             </div>
 
-            <!-- Descuentos View -->
-            <div id="descuentosView" class="view-content">
+            <!-- Justificaciones View -->
+            <div id="justificacionesView" class="view-content">
                 <div class="view-header">
-                    <h2>Gestión de Descuentos</h2>
-                    <p class="subtitle">Administra los convenios y observaciones de cada socia</p>
+                    <h2>Justificaciones de Inasistencias</h2>
+                    <p class="subtitle">Registra justificaciones para ausencias en reuniones</p>
                 </div>
 
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>RUT</th>
-                                <th>Nombre</th>
-                                <th>Convenio Activo</th>
-                                <th>Observación</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="descuentosTableBody">
-                            <tr>
-                                <td colspan="5" class="empty-state">No hay socias registradas</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Reportes View -->
-            <div id="reportesView" class="view-content">
-                <div class="view-header">
-                    <h2>Reportes y Estadísticas</h2>
-                    <p class="subtitle">Generación de reportes masivos e individuales</p>
-                </div>
-
-                <div class="report-tabs">
-                    <button class="tab-btn active" onclick="switchReportTab('masivo')">Reporte Masivo</button>
-                    <button class="tab-btn" onclick="switchReportTab('individual')">Reporte Individual</button>
-                </div>
-
-                <!-- Masivo Tab -->
-                <div id="tab-masivo" class="report-tab-content active">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Nómina Completa Consolidada</h3>
-                            <button class="btn-primary" onclick="exportReporteMasivo()">
-                                <i data-lucide="download"></i> Exportar CSV
-                            </button>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table" id="tablaReporteMasivo">
-                                <thead>
-                                    <tr>
-                                        <th><i data-lucide="id-card"></i> RUT</th>
-                                        <th><i data-lucide="user"></i> Nombre Completo</th>
-                                        <th><i data-lucide="check-circle"></i> Asistencias</th>
-                                        <th><i data-lucide="clock"></i> Atrasos</th>
-                                        <th><i data-lucide="x-circle"></i> Inasistencias</th>
-                                        <th><i data-lucide="activity"></i> Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Populated by JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Individual Tab -->
-                <div id="tab-individual" class="report-tab-content" style="display: none;">
-                    <div class="search-bar">
-                        <i data-lucide="search"></i>
-                        <input type="text" id="searchReporteIndividual" placeholder="Buscar socia por RUT o nombre..."
-                            onkeyup="searchSociaForReport()">
+                <div class="justificaciones-form"
+                    style="background: var(--white); padding: 2rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+                    <div class="form-group">
+                        <label for="justSociaSelect">Seleccionar Socia</label>
+                        <select id="justSociaSelect" class="form-control"
+                            style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: var(--radius-md); font-size: 1rem;">
+                            <option value="">-- Seleccionar socia --</option>
+                        </select>
                     </div>
 
-                    <div id="reporteIndividualResult" class="reporte-individual-card" style="display: none;">
-                        <!-- Populated by JS -->
+                    <div class="form-group">
+                        <label for="justReunionSelect">Seleccionar Reunión</label>
+                        <select id="justReunionSelect" class="form-control"
+                            style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: var(--radius-md); font-size: 1rem;">
+                            <option value="">-- Seleccionar reunión --</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-            <!-- Generar Documentos View -->
-            <div id="generarDocumentosView" class="view-content">
-                <div class="view-header">
-                    <h2>Generación de Documentos</h2>
-                    <p class="subtitle">Descarga de plantillas, certificados y convenios</p>
-                </div>
 
-                <div class="documents-grid"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div class="form-group">
+                        <label for="justMotivo">Motivo de Justificación</label>
+                        <textarea id="justMotivo" rows="4" placeholder="Ingrese el motivo de la justificación..."
+                            style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: var(--radius-md); font-size: 1rem; resize: vertical;"></textarea>
+                    </div>
 
-                    <!-- Card 1: CSV Template -->
-                    <div class="card" style="padding: 1.5rem;">
-                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="file-spreadsheet" style="color: #10B981;"></i> Plantilla Socias
-                        </h3>
-                        <p style="color: var(--gray-600); margin-bottom: 1.5rem;">Descarga el formato CSV correcto para
-                            importar socias masivamente.</p>
-                        <button class="btn-primary" style="width: 100%;" onclick="downloadCSVTemplate()">
-                            <i data-lucide="download"></i> Descargar CSV
+                    <div class="form-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button class="btn-secondary" onclick="limpiarFormularioJustificacion()">Limpiar</button>
+                        <button class="btn-primary" onclick="guardarJustificacion()">
+                            <i data-lucide="save"></i>
+                            Guardar Justificación
                         </button>
                     </div>
+                </div>
 
-                    <!-- Card 2: Certificate -->
-                    <div class="card" style="padding: 1.5rem;">
-                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="award" style="color: #F59E0B;"></i> Certificado de Socia
-                        </h3>
-                        <p style="color: var(--gray-600); margin-bottom: 1rem;">Genera un certificado de afiliación para
-                            una socia.</p>
-
-                        <div class="form-group">
-                            <label>Seleccionar Socia</label>
-                            <div class="input-group">
-                                <input type="text" id="certSociaRut" placeholder="Buscar por RUT..."
-                                    oninput="searchSociaForCert(this.value)">
-                                <button class="btn-secondary"><i data-lucide="search"></i></button>
-                            </div>
-                            <div id="certSociaResults" class="search-results"
-                                style="display:none; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; position: absolute; background: white; width: 100%; z-index: 10;">
-                            </div>
-                            <input type="hidden" id="certSelectedSocia">
-                            <p id="certSelectedName"
-                                style="font-weight: bold; margin-top: 0.5rem; color: var(--primary-blue);"></p>
-                        </div>
-
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;"
-                            onclick="generateCertificate()">
-                            <i data-lucide="printer"></i> Generar Certificado
-                        </button>
+                <div class="justificaciones-list" style="margin-top: 2rem;">
+                    <h3>Justificaciones Registradas</h3>
+                    <div id="justificacionesTableContainer" class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Socia</th>
+                                    <th>Reunión</th>
+                                    <th>Fecha</th>
+                                    <th>Motivo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="justificacionesTableBody">
+                                <tr>
+                                    <td colspan="5" class="empty-state">No hay justificaciones registradas</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Card 3: Agreement -->
-                    <div class="card" style="padding: 1.5rem;">
-                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="file-signature" style="color: #6366F1;"></i> Documento de Convenio
-                        </h3>
-                        <p style="color: var(--gray-600); margin-bottom: 1rem;">Crea un documento de compromiso de pago.
-                        </p>
-
-                        <div class="form-group">
-                            <label>Nombre Socia</label>
-                            <input type="text" id="convSocia" placeholder="Ej: María González">
-                        </div>
-                        <div class="form-group">
-                            <label>Comercio / Entidad</label>
-                            <input type="text" id="convComercio" placeholder="Ej: Farmacia Cruz Verde">
-                        </div>
-                        <div class="form-group" style="display: flex; gap: 1rem;">
-                            <div style="flex: 1;">
-                                <label>Monto</label>
-                                <input type="number" id="convMonto" placeholder="50000">
-                            </div>
-                            <div style="flex: 1;">
-                                <label>Cuotas</label>
-                                <input type="number" id="convCuotas" placeholder="3">
-                            </div>
-                        </div>
-
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="generateConvenio()">
-                            <i data-lucide="file-text"></i> Generar Convenio
-                        </button>
-                    </div>
-
                 </div>
             </div>
         </main>
@@ -601,6 +496,30 @@
                     </div>
                 </div>
 
+                <div class="form-row"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                    <div class="form-group">
+                        <label for="sociaNombres">Nombres</label>
+                        <input type="text" id="sociaNombres" placeholder="Ej: María José">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaTelefono">Teléfono/WhatsApp</label>
+                        <input type="text" id="sociaTelefono" placeholder="Ej: +56912345678">
+                    </div>
+                </div>
+
+                <div class="form-row"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label for="sociaApellidoPaterno">Apellido Paterno</label>
+                        <input type="text" id="sociaApellidoPaterno" placeholder="Ej: González">
+                    </div>
+                    <div class="form-group">
+                        <label for="sociaApellidoMaterno">Apellido Materno</label>
+                        <input type="text" id="sociaApellidoMaterno" placeholder="Ej: Pérez">
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary"
                         onclick="closeModal('nuevaSociaModal')">Cancelar</button>
@@ -610,11 +529,11 @@
         </div>
     </div>
 
-    <!-- Modal Importar CSV -->
+    <!-- Modal Importar Excel -->
     <div id="importarModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Importar Socias desde CSV</h3>
+                <h3>Importar Socias desde Excel</h3>
                 <button class="btn-close" onclick="closeModal('importarModal')">
                     <i data-lucide="x"></i>
                 </button>
@@ -622,19 +541,22 @@
             <div class="import-section">
                 <div class="upload-area" id="uploadArea">
                     <i data-lucide="upload-cloud"></i>
-                    <h3>Arrastra tu archivo CSV aquí</h3>
+                    <h3>Arrastra tu archivo Excel aquí</h3>
                     <p>o haz clic para seleccionar</p>
-                    <input type="file" id="csvFile" accept=".csv" style="display: none;">
-                    <button class="btn-secondary" onclick="document.getElementById('csvFile').click()">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;">
+                    <button class="btn-secondary" onclick="document.getElementById('excelFile').click()">
                         Seleccionar Archivo
                     </button>
                 </div>
 
                 <div class="csv-format-info">
-                    <h3>Formato del CSV</h3>
+                    <h3>Formato del Excel</h3>
                     <p>El archivo debe contener las siguientes columnas:</p>
-                    <code>RUT,Nombre,Email,Estado</code>
-                    <p class="example">Ejemplo: 12345678-9,María González,maria@email.com,Activo</p>
+                    <code>Apellido Paterno | Apellido Materno | Nombres | Teléfono | RUT</code>
+                    <p class="example">Ejemplo: González | Pérez | María José | 912345678 | 12345678-9</p>
+                    <button class="btn-primary" onclick="downloadExcelTemplate()" style="margin-top: 1rem;">
+                        <i data-lucide="download"></i> Descargar Plantilla
+                    </button>
                 </div>
             </div>
         </div>
@@ -927,6 +849,11 @@
             </div>
         </div>
     </div>
+
+    <!-- New Modules Scripts -->
+    <script src="voice-assistant.js"></script>
+    <script src="pdf-generator.js"></script>
+    <script src="excel-importer.js"></script>
 
 </body>
 
