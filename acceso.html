@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Acceso a Asamblea - APP Asistencia">
+    <title>Acceso a Asamblea - APP Asistencia</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="login-page">
+    <div class="navbar">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i data-lucide="arrow-left"></i>
+            Volver
+        </button>
+    </div>
+
+    <div class="container-login" id="loadingContainer" style="display: flex;">
+        <div class="login-card" style="text-align: center;">
+            <div class="login-icon" style="margin: 0 auto 20px;">
+                <i data-lucide="loader"></i>
+            </div>
+            <h1>Validando Acceso...</h1>
+            <p>Por favor espera un momento</p>
+        </div>
+    </div>
+
+    <div class="container-login" id="successContainer" style="display: none;">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i data-lucide="check-circle"></i>
+                </div>
+                <h1>¡Acceso Permitido!</h1>
+                <p id="asambleaNombre"></p>
+            </div>
+
+            <div id="asambleaInfo" style="background: var(--light); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <p style="margin: 10px 0;">
+                    <strong>Fecha:</strong> <span id="asambleaFecha"></span>
+                </p>
+                <p style="margin: 10px 0;">
+                    <strong>Hora:</strong> <span id="asambleaHora"></span>
+                </p>
+                <p style="margin: 10px 0;">
+                    <strong>Descripción:</strong> <span id="asambleaDescripcion"></span>
+                </p>
+            </div>
+
+            <button class="btn-main" onclick="continuarARegistro()">
+                <i data-lucide="check"></i>
+                Continuar a Registro
+            </button>
+        </div>
+    </div>
+
+    <div class="container-login" id="errorContainer" style="display: none;">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    <i data-lucide="x-circle"></i>
+                </div>
+                <h1>Acceso Denegado</h1>
+                <p id="errorMessage"></p>
+            </div>
+
+            <button class="btn-main" onclick="location.href='index.html'">
+                <i data-lucide="arrow-left"></i>
+                Volver al Inicio
+            </button>
+        </div>
+    </div>
+
+    <div class="background-decoration">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        lucide.createIcons();
+
+        // Check access token and asamblea
+        window.addEventListener('load', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const asambleaId = urlParams.get('asambleaId');
+
+            if (!token || !asambleaId) {
+                showError('Token o Asamblea inválida');
+                return;
+            }
+
+            // Get asambleas from localStorage
+            const asambleas = JSON.parse(localStorage.getItem('asambleas') || '[]');
+            const asamblea = asambleas.find(a => a.id === asambleaId);
+
+            if (!asamblea) {
+                showError('Asamblea no encontrada');
+                return;
+            }
+
+            if (asamblea.accessToken !== token) {
+                showError('Token inválido para esta asamblea');
+                return;
+            }
+
+            if (asamblea.estado !== 'Activa') {
+                showError('Esta asamblea no está activa');
+                return;
+            }
+
+            // Token es válido
+            showSuccess(asamblea, asambleaId);
+        });
+
+        function showSuccess(asamblea, asambleaId) {
+            document.getElementById('loadingContainer').style.display = 'none';
+            document.getElementById('successContainer').style.display = 'flex';
+            
+            document.getElementById('asambleaNombre').textContent = asamblea.nombre;
+            document.getElementById('asambleaFecha').textContent = asamblea.fecha;
+            document.getElementById('asambleaHora').textContent = asamblea.hora;
+            document.getElementById('asambleaDescripcion').textContent = asamblea.descripcion || 'Sin descripción';
+
+            // Store for next page
+            sessionStorage.setItem('currentAsambleaId', asambleaId);
+
+            lucide.createIcons();
+        }
+
+        function showError(message) {
+            document.getElementById('loadingContainer').style.display = 'none';
+            document.getElementById('errorContainer').style.display = 'flex';
+            document.getElementById('errorMessage').textContent = message;
+            lucide.createIcons();
+        }
+
+        function continuarARegistro() {
+            const asambleaId = sessionStorage.getItem('currentAsambleaId');
+            if (asambleaId) {
+                window.location.href = `registro.html?asambleaId=${asambleaId}`;
+            } else {
+                showError('Error al obtener asamblea');
+            }
+        }
+    </script>
+</body>
+</html>

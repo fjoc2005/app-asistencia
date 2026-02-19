@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Escanear QR para registrar asistencia">
+    <title>Registrar Asistencia - APP Asistencia</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- QR Reader -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+</head>
+<body class="registro-page">
+    <div class="navbar">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i data-lucide="arrow-left"></i>
+            Volver
+        </button>
+    </div>
+
+    <div class="container-registro">
+        <div class="header-registro">
+            <div class="icon-header">
+                <i data-lucide="qr-code"></i>
+            </div>
+            <h1>Escanear QR</h1>
+            <p>Acerca tu carnet de identidad para registrar asistencia</p>
+        </div>
+
+        <!-- QR Scanner -->
+        <div class="scanner-container">
+            <div id="qr-reader"></div>
+            <div class="scanner-overlay">
+                <div class="scanner-box">
+                    <span>Apunta a la cámara</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual RUT Input (fallback) -->
+        <div class="manual-input-section">
+            <p class="divider-text">O ingresa el RUT manualmente</p>
+            
+            <form id="registroForm" class="form-rut">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="rut" 
+                        placeholder="Ej: 12.345.678-9" 
+                        autocomplete="off"
+                        maxlength="12"
+                    >
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    <i data-lucide="alert-circle"></i>
+                    <span></span>
+                </div>
+
+                <!-- User Info Display -->
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <div class="user-card">
+                        <i data-lucide="user-check"></i>
+                        <p>Hola, <strong id="userName"></strong></p>
+                        <span>¿Deseas confirmar tu asistencia?</span>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnConfirmar" class="btn-confirm" disabled>
+                    <i data-lucide="check"></i>
+                    Confirmar Asistencia
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div id="resultIconContainer" class="result-icon-container">
+                <i id="resultIcon" data-lucide="check-circle"></i>
+            </div>
+            <h2 id="resultTitle"></h2>
+            <p id="resultMessage"></p>
+            <div id="redirectMessage" class="redirect-countdown">
+                Redirigiendo en <span id="countdown">3</span> segundos...
+            </div>
+            <button id="btnCloseModal" class="btn-modal-close" onclick="closeResultModal()" style="display: none;">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

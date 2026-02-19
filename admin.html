@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Panel de Administración - APP Asistencia">
+    <title>Panel de Administración - APP Asistencia</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- SheetJS for Excel -->
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    
+    <!-- QR Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Print Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+    <div class="admin-navbar">
+        <div class="navbar-left">
+            <h2>Panel de Administración</h2>
+            <div id="firebaseStatusAdmin" class="status-mini">
+                <i data-lucide="wifi"></i>
+                <span>Conectado</span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <span id="adminEmail" class="admin-info"></span>
+            <button onclick="logout()" class="btn-logout">
+                <i data-lucide="log-out"></i>
+                Salir
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <nav class="admin-menu">
+                <button class="menu-item active" onclick="showTab('dashboard')">
+                    <i data-lucide="bar-chart-2"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="menu-item" onclick="showTab('socias')">
+                    <i data-lucide="users"></i>
+                    <span>Socias</span>
+                </button>
+                <button class="menu-item" onclick="showTab('asambleas')">
+                    <i data-lucide="calendar"></i>
+                    <span>Asambleas</span>
+                </button>
+                <button class="menu-item" onclick="showTab('asistencias')">
+                    <i data-lucide="check-square"></i>
+                    <span>Asistencias</span>
+                </button>
+                <button class="menu-item" onclick="showTab('justificaciones')">
+                    <i data-lucide="file-text"></i>
+                    <span>Justificaciones</span>
+                </button>
+                <button class="menu-item" onclick="showTab('reportes')">
+                    <i data-lucide="printer"></i>
+                    <span>Reportes</span>
+                </button>
+                <button class="menu-item" onclick="showTab('importar')">
+                    <i data-lucide="upload"></i>
+                    <span>Importar Datos</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Content Area -->
+        <div class="admin-content">
+            
+            <!-- ============ DASHBOARD ============ -->
+            <div id="dashboard-tab" class="admin-tab active">
+                <div class="tab-header">
+                    <h1>Dashboard</h1>
+                    <p>Resumen general del sistema</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon users">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Socias Registradas</p>
+                            <p class="stat-value" id="totalSocias">0</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon calendar">
+                            <i data-lucide="calendar"></i>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Asambleas Activas</p>
+                            <p class="stat-value" id="totalAsambleas">0</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon attendance">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Asistencias Hoy</p>
+                            <p class="stat-value" id="attendanceToday">0</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <i data-lucide="activity"></i>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Total Asistencias</p>
+                            <p class="stat-value" id="totalAttendance">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Últimas Asistencias</h3>
+                        <div id="recentAttendance" class="recent-list"></div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <h3>Asambleas Próximas</h3>
+                        <div id="upcomingAsambleas" class="upcoming-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ SOCIAS ============ -->
+            <div id="socias-tab" class="admin-tab">
+                <div class="tab-header">
+                    <h1>Gestión de Socias</h1>
+                    <button class="btn-action" onclick="openAddSociaForm()">
+                        <i data-lucide="plus"></i>
+                        Agregar Socia
+                    </button>
+                </div>
+
+                <div class="search-bar">
+                    <input 
+                        type="text" 
+                        id="searchSocias" 
+                        placeholder="Buscar por RUT o nombre..." 
+                        onkeyup="filterSocias()"
+                    >
+                    <i data-lucide="search"></i>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="socias-table">
+                        <thead>
+                            <tr>
+                                <th>RUT</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sociasTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============ ASAMBLEAS ============ -->
+            <div id="asambleas-tab" class="admin-tab">
+                <div class="tab-header">
+                    <h1>Gestión de Asambleas</h1>
+                    <button class="btn-action" onclick="openCreateAsambleaForm()">
+                        <i data-lucide="plus"></i>
+                        Nueva Asamblea
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="asambleas-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Asistencias</th>
+                                <th>QR</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="asambleasTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============ ASISTENCIAS ============ -->
+            <div id="asistencias-tab" class="admin-tab">
+                <div class="tab-header">
+                    <h1>Registro de Asistencias</h1>
+                    <div class="filter-section">
+                        <select id="filterAsambleaAsistencias" onchange="filterAsistencias()">
+                            <option value="">Todas las asambleas</option>
+                        </select>
+                        <input 
+                            type="date" 
+                            id="filterDate" 
+                            onchange="filterAsistencias()"
+                        >
+                        <input 
+                            type="text" 
+                            id="filterRut" 
+                            placeholder="Filtrar por RUT..." 
+                            onkeyup="filterAsistencias()"
+                        >
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Asamblea</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>RUT</th>
+                                <th>Nombre</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============ JUSTIFICACIONES ============ -->
+            <div id="justificaciones-tab" class="admin-tab">
+                <div class="tab-header">
+                    <h1>Registro de Justificaciones</h1>
+                    <button class="btn-action" onclick="openJustificacionForm()">
+                        <i data-lucide="plus"></i>
+                        Agregar Justificación
+                    </button>
+                </div>
+
+                <div class="search-bar">
+                    <input 
+                        type="text" 
+                        id="searchJustificaciones" 
+                        placeholder="Buscar por RUT o nombre..." 
+                        onkeyup="filterJustificaciones()"
+                    >
+                    <i data-lucide="search"></i>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="justificaciones-table">
+                        <thead>
+                            <tr>
+                                <th>RUT</th>
+                                <th>Nombre</th>
+                                <th>Asamblea</th>
+                                <th>Motivo</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="justificacionesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============ REPORTES ============ -->
+            <div id="reportes-tab" class="admin-tab">
+                <div class="tab-header">
+                    <h1>Reportes e Impresión</h1>
+                    <p>Genera reportes de asistencias y justificaciones</p>
+                </div>
+
+                <div class="reportes-grid">
+                    <div class="report-card">
+                        <div class="report-icon">
+                            <i data-lucide="list"></i>
+                        </div>
+                        <h3>Lista de Asamblea</h3>
+                        <p>Imprime la lista de asistencias de una asamblea específica</p>
+                        <div class="report-form">
+                            <select id="reportAsambleaSelect">
+                                <option value="">Selecciona una asamblea</option>
+                            </select>
+                            <button class="btn-report" onclick="printAsambleaReport()">
+                                <i data-lucide="printer"></i>
+                                Imprimir
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-icon">
+                            <i data-lucide="file-text"></i>
+                        </div>
+                        <h3>Justificación Individual</h3>
+                        <p>Imprime justificación de una socia específica</p>
+                        <div class="report-form">
+                            <select id="reportJustificacionSelect">
+                                <option value="">Selecciona una justificación</option>
+                            </select>
+                            <button class="btn-report" onclick="printJustificacionReport()">
+                                <i data-lucide="printer"></i>
+                                Imprimir
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-icon">
+                            <i data-lucide="download"></i>
+                        </div>
+                        <h3>Exportar a Excel</h3>
+                        <p>Exporta todas las asistencias a un archivo Excel</p>
+                        <div class="report-form">
+                            <select id="reportExportAsambleaSelect">
+                                <option value="">Todas las asambleas</option>
+                            </select>
+                            <button class="btn-report" onclick="exportToExcel()">
+                                <i data-lucide="download"></i>
+                                Descargar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ IMPORTAR DATOS ============ -->
+            <div id="importar-tab" class="admin-tab">
+                <div class="tab-header">
+                    <h1>Importar Datos</h1>
+                    <p>Carga socias desde un archivo Excel</p>
+                </div>
+
+                <div class="import-section">
+                    <div class="import-box">
+                        <i data-lucide="file-text"></i>
+                        <h3>Selecciona un archivo Excel</h3>
+                        <p>Formato requerido: RUT, Nombre</p>
+                        <p class="file-info">(Máximo 2MB)</p>
+                        
+                        <input 
+                            type="file" 
+                            id="excelFile" 
+                            accept=".xlsx,.xls,.csv" 
+                            onchange="handleFileImport(event)"
+                            style="display: none;"
+                        >
+                        
+                        <button class="btn-import" onclick="document.getElementById('excelFile').click()">
+                            <i data-lucide="upload"></i>
+                            Seleccionar Archivo
+                        </button>
+                    </div>
+
+                    <div id="importResult" class="import-result" style="display: none;">
+                        <div id="resultContent"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============ MODALES ============ -->
+
+    <!-- Modal Agregar Socia -->
+    <div id="addSociaModal" class="modal" style="display: none;">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Agregar Nueva Socia</h2>
+                <button class="btn-close" onclick="closeAddSociaForm()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <form id="addSociaForm" class="form-modal">
+                <div class="form-group">
+                    <label for="newRut">RUT</label>
+                    <input 
+                        type="text" 
+                        id="newRut" 
+                        placeholder="Ej: 12.345.678-9" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newNombre">Nombre Completo</label>
+                    <input 
+                        type="text" 
+                        id="newNombre" 
+                        placeholder="Nombre..." 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newEmail">Email</label>
+                    <input 
+                        type="email" 
+                        id="newEmail" 
+                        placeholder="correo@ejemplo.com"
+                    >
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeAddSociaForm()">Cancelar</button>
+                    <button type="submit" class="btn-save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Crear Asamblea -->
+    <div id="createAsambleaModal" class="modal" style="display: none;">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Nueva Asamblea</h2>
+                <button class="btn-close" onclick="closeCreateAsambleaForm()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <form id="createAsambleaForm" class="form-modal">
+                <div class="form-group">
+                    <label for="asambleaNombre">Nombre</label>
+                    <input 
+                        type="text" 
+                        id="asambleaNombre" 
+                        placeholder="Ej: Asamblea General 2026" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="asambleaFecha">Fecha</label>
+                    <input 
+                        type="date" 
+                        id="asambleaFecha" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="asambleaHora">Hora</label>
+                    <input 
+                        type="time" 
+                        id="asambleaHora" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="asambleaDescripcion">Descripción</label>
+                    <textarea 
+                        id="asambleaDescripcion" 
+                        placeholder="Descripción..."
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeCreateAsambleaForm()">Cancelar</button>
+                    <button type="submit" class="btn-save">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Justificación -->
+    <div id="justificacionModal" class="modal" style="display: none;">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Agregar Justificación</h2>
+                <button class="btn-close" onclick="closeJustificacionForm()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <form id="justificacionForm" class="form-modal">
+                <div class="form-group">
+                    <label for="justRut">Buscar Socia (RUT o Nombre)</label>
+                    <input 
+                        type="text" 
+                        id="justRut" 
+                        placeholder="Ingresa RUT o nombre..."
+                        onkeyup="searchSociaForJustificacion()"
+                    >
+                    <div id="sociasSearchResults" class="search-results"></div>
+                </div>
+
+                <input type="hidden" id="selectedSociaRut">
+                <div id="selectedSociaInfo" style="display: none;" class="socia-info">
+                    <p><strong id="selectedSociaNombre"></strong></p>
+                    <p id="selectedSociaRutDisplay"></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="justAsambleaSelect">Asamblea</label>
+                    <select id="justAsambleaSelect" required>
+                        <option value="">Selecciona una asamblea</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="justMotivo">Motivo de Ausencia</label>
+                    <textarea 
+                        id="justMotivo" 
+                        placeholder="Describe el motivo..."
+                        rows="3"
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeJustificacionForm()">Cancelar</button>
+                    <button type="submit" class="btn-save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal QR Asamblea -->
+    <div id="qrModal" class="modal" style="display: none;">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>QR de Asamblea</h2>
+                <button class="btn-close" onclick="closeQRModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="qr-container">
+                <p id="qrTitle" style="text-align: center; margin-bottom: 20px;"></p>
+                <div id="qrCodeContainer" style="text-align: center;"></div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <p id="qrAccessToken" style="font-family: monospace; background: #f3f4f6; padding: 10px; border-radius: 8px; word-break: break-all;"></p>
+                    <button class="btn-action" onclick="copyQRToken()" style="margin-top: 10px;">
+                        <i data-lucide="copy"></i>
+                        Copiar Código
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+    <script>
+        lucide.createIcons();
+        
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            const initialized = await initializeFirebase();
+            const statusBadge = document.getElementById('firebaseStatusAdmin');
+            
+            if (initialized) {
+                statusBadge.innerHTML = '<i data-lucide="wifi"></i><span>Conectado</span>';
+            } else {
+                statusBadge.innerHTML = '<i data-lucide="wifi-off"></i><span>Desconectado</span>';
+            }
+            
+            initializeDashboard();
+            loadSocias();
+            loadAsambleas();
+            loadAsistencias();
+            loadJustificaciones();
+            
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
