@@ -1,11 +1,12 @@
 // ===================================
-// Firebase Configuration
+// Firebase Configuration (Modular SDK)
 // ===================================
 
-// Import Firebase modules from CDN
-// (These are loaded in HTML file)
+// Importa las funciones necesarias del SDK modular de Firebase
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, get, set, onValue, child } from 'firebase/database';
 
-// Your Firebase Configuration
+// Tu Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBjxduk8IYzwIWIcZbRS4OlQ0ZoNLVFZEw",
   authDomain: "proyecto-asistenciaste.firebaseapp.com",
@@ -16,27 +17,17 @@ const firebaseConfig = {
   appId: "1:371479274638:web:383bf3cc126b6aa94d15df"
 };
 
-// Initialize Firebase (will be called after SDK loads)
-let firebaseApp;
-let realtimeDB;
+// Inicializa Firebase
+const app = initializeApp(firebaseConfig);
+export const rtdb = getDatabase(app); // Exporta la instancia de Realtime Database
 
-async function initializeFirebase() {
-  try {
-    // Initialize Firebase
-    firebaseApp = firebase.initializeApp(firebaseConfig);
-    realtimeDB = firebase.database(firebaseApp);
-    console.log("✅ Firebase inicializado correctamente");
-    return true;
-  } catch (error) {
-    console.error("❌ Error inicializando Firebase:", error);
-    return false;
-  }
-}
+console.log("✅ Firebase inicializado correctamente (SDK Modular)");
 
-// Helper functions para Firebase
-async function getAsamblea(asambleaId) {
+// Helper functions para Firebase (Modular)
+export async function getAsamblea(asambleaId) {
   try {
-    const snapshot = await realtimeDB.ref(`asambleas/${asambleaId}`).get();
+    const dbRef = ref(rtdb);
+    const snapshot = await get(child(dbRef, `asambleas/${asambleaId}`));
     return snapshot.exists() ? snapshot.val() : null;
   } catch (error) {
     console.error("Error obteniendo asamblea:", error);
@@ -44,9 +35,10 @@ async function getAsamblea(asambleaId) {
   }
 }
 
-async function getAsistencias(asambleaId) {
+export async function getAsistencias(asambleaId) {
   try {
-    const snapshot = await realtimeDB.ref(`asambleas/${asambleaId}/asistencias`).get();
+    const dbRef = ref(rtdb);
+    const snapshot = await get(child(dbRef, `asambleas/${asambleaId}/asistencias`));
     return snapshot.exists() ? snapshot.val() : {};
   } catch (error) {
     console.error("Error obteniendo asistencias:", error);
@@ -54,10 +46,10 @@ async function getAsistencias(asambleaId) {
   }
 }
 
-async function saveAsistencia(asambleaId, rut, nombreCompleto, timestamp) {
+export async function saveAsistencia(asambleaId, rut, nombreCompleto, timestamp) {
   try {
     const id = `${rut}-${timestamp}`;
-    await realtimeDB.ref(`asambleas/${asambleaId}/asistencias/${id}`).set({
+    await set(ref(rtdb, `asambleas/${asambleaId}/asistencias/${id}`), {
       rut: rut,
       nombreCompleto: nombreCompleto,
       timestamp: timestamp,
@@ -72,9 +64,10 @@ async function saveAsistencia(asambleaId, rut, nombreCompleto, timestamp) {
   }
 }
 
-async function listenToAsistencias(asambleaId, callback) {
+export function listenToAsistencias(asambleaId, callback) {
   try {
-    realtimeDB.ref(`asambleas/${asambleaId}/asistencias`).on('value', (snapshot) => {
+    const asistenciasRef = ref(rtdb, `asambleas/${asambleaId}/asistencias`);
+    onValue(asistenciasRef, (snapshot) => {
       const data = snapshot.val() || {};
       callback(data);
     });
@@ -83,19 +76,19 @@ async function listenToAsistencias(asambleaId, callback) {
   }
 }
 
-// Local storage fallback functions
-function getAsambleas() {
+// Local storage fallback functions (sin cambios, ya que no dependen de Firebase)
+export function getAsambleas() {
   const asambleas = localStorage.getItem('asambleas');
   return asambleas ? JSON.parse(asambleas) : [];
 }
 
-function saveAsambleaLocal(asamblea) {
+export function saveAsambleaLocal(asamblea) {
   const asambleas = getAsambleas();
   asambleas.push(asamblea);
   localStorage.setItem('asambleas', JSON.stringify(asambleas));
 }
 
-function updateAsambleaLocal(asambleaId, data) {
+export function updateAsambleaLocal(asambleaId, data) {
   let asambleas = getAsambleas();
   const index = asambleas.findIndex(a => a.id === asambleaId);
   if (index !== -1) {
@@ -104,7 +97,7 @@ function updateAsambleaLocal(asambleaId, data) {
   }
 }
 
-function deleteAsambleaLocal(asambleaId) {
+export function deleteAsambleaLocal(asambleaId) {
   let asambleas = getAsambleas();
   asambleas = asambleas.filter(a => a.id !== asambleaId);
   localStorage.setItem('asambleas', JSON.stringify(asambleas));
